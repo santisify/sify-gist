@@ -154,7 +154,7 @@ npm run dev
 
 你可以直接点击下面的按钮将项目部署到 Vercel：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/sify-gist)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/santisify/sify-gist)
 
 或者手动部署:
 
