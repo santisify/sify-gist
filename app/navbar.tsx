@@ -67,7 +67,21 @@ export default function Navbar() {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm dark:shadow-gray-900/20">
       <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <a href="/" className="text-xl font-bold text-gray-900 dark:text-white">Sify Gist</a>
+        <a href="/" className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="w-8 h-8">
+            <defs>
+              <linearGradient id="navGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#3B82F6' }} />
+                <stop offset="100%" style={{ stopColor: '#2563EB' }} />
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="28" height="28" rx="6" fill="url(#navGrad)" />
+            <path d="M11 10L6 16L11 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M21 10L26 16L21 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M18 8L14 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+          <span>Sify Gist</span>
+        </a>
         <nav className="flex items-center space-x-6">
           <form onSubmit={handleSearch} className="relative">
             <div className="relative">

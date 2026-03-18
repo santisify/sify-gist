@@ -10,6 +10,10 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Sify Gist - 代码片段分享平台',
   description: '一个简单的代码片段分享平台，类似于 GitHub Gist',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/apple-touch-icon.svg',
+  },
 };
 
 // 添加一个内联脚本来防止主题闪烁
