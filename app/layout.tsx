@@ -56,12 +56,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
             <Navbar />
-            <main>
+            <main className="flex-1">
               {children}
             </main>
-            <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-8 py-6">
+            <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-6 mt-auto">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 dark:text-gray-400 text-sm">
                 © {new Date().getFullYear()} Sify Gist - 代码片段分享平台
               </div>

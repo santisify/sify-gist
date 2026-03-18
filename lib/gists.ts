@@ -143,10 +143,22 @@ export async function createGist(data: CreateGistData): Promise<Gist> {
   }
 
   // 创建初始版本记录
-  await insert('gist_versions', {
+  const initialVersion = await insert('gist_versions', {
     gist_id: id,
     version_number: 1 // 初始版本为1
   });
+
+  // 保存初始版本的文件内容
+  if (initialVersion && initialVersion[0]) {
+    for (const file of data.files) {
+      await insert('gist_file_versions', {
+        gist_version_id: initialVersion[0].id,
+        filename: file.filename,
+        content: file.content,
+        language: file.language
+      });
+    }
+  }
 
   // 返回创建的 gist
   return {
@@ -187,30 +199,14 @@ export async function updateGist(id: string, data: Partial<CreateGistData>): Pro
       limit: 1
     });
     
-    const currentVersion = versions.length > 0 ? versions[0].version_number as number : 0;
-    const newVersionNumber = currentVersion + 1;
+    const currentVersionNumber = versions.length > 0 ? versions[0].version_number as number : 0;
+    const newVersionNumber = currentVersionNumber + 1;
     
     // 创建新版本记录
     const newVersion = await insert('gist_versions', {
       gist_id: id,
       version_number: newVersionNumber
     });
-    
-    if (newVersion) {
-      // 保存当前文件到版本历史
-      const currentFiles = await select('gist_files', {
-        where: { gist_id: id }
-      });
-      
-      for (const file of currentFiles) {
-        await insert('gist_file_versions', {
-          gist_version_id: newVersion[0].id,
-          filename: file.filename,
-          content: file.content,
-          language: file.language
-        });
-      }
-    }
     
     // 更新当前文件 - 先删除旧文件，再插入新文件
     await remove('gist_files', { gist_id: id });
@@ -222,6 +218,18 @@ export async function updateGist(id: string, data: Partial<CreateGistData>): Pro
         content: file.content,
         language: file.language
       });
+    }
+    
+    // 保存新版本的文件内容到历史记录
+    if (newVersion && newVersion[0]) {
+      for (const file of data.files) {
+        await insert('gist_file_versions', {
+          gist_version_id: newVersion[0].id,
+          filename: file.filename,
+          content: file.content,
+          language: file.language
+        });
+      }
     }
   }
   
@@ -315,38 +323,63 @@ export async function getGistByVersion(gistId: string, versionNumber: number): P
 
   const gistData = gistsData[0];
   
-  // 获取该版本的文件
+  // 获取所有版本，找到最新版本号
+  const versionsData = await select('gist_versions', {
+    where: { gist_id: gistId },
+    order: 'version_number desc',
+    limit: 1
+  });
+  
+  const latestVersionNumber = versionsData.length > 0 ? versionsData[0].version_number as number : 1;
+  
+  // 如果请求的是最新版本，从 gist_files 获取（当前版本）
+  if (versionNumber >= latestVersionNumber) {
+    return await getGistById(gistId);
+  }
+  
+  // 获取指定版本的元数据
   const versionData = await select('gist_versions', {
     where: { gist_id: gistId, version_number: versionNumber }
   });
 
   if (versionData.length === 0) {
-    // 如果指定版本不存在，返回当前版本
-    return await getGistById(gistId);
+    return null;
   }
 
+  // 从 gist_file_versions 获取历史版本文件
   const filesData = await select('gist_file_versions', {
     where: { gist_version_id: versionData[0].id }
   });
 
-  if (filesData.length === 0) {
-    // 如果指定版本没有文件，返回当前版本
-    return await getGistById(gistId);
+  // 如果历史版本有文件内容，返回它
+  if (filesData.length > 0) {
+    const files: File[] = filesData.map((fileData: any) => ({
+      filename: fileData.filename,
+      content: fileData.content,
+      language: fileData.language
+    }));
+
+    return {
+      id: gistData.id as string,
+      user_id: gistData.user_id as string,
+      title: gistData.title as string,
+      description: gistData.description as string,
+      created_at: gistData.created_at as string,
+      updated_at: gistData.updated_at as string,
+      files: files
+    };
   }
-
-  const files: File[] = filesData.map((fileData: any) => ({
-    filename: fileData.filename,
-    content: fileData.content,
-    language: fileData.language
-  }));
-
+  
+  // 历史版本没有文件内容（旧数据缺失）
+  // 返回一个特殊的标记，让前端知道这是数据缺失的情况
+  // 但为了用户体验，还是返回 gist 的基本信息，files 为空数组
   return {
     id: gistData.id as string,
     user_id: gistData.user_id as string,
     title: gistData.title as string,
     description: gistData.description as string,
-    created_at: gistData.created_at as string,
+    created_at: versionData[0].created_at as string, // 使用版本创建时间
     updated_at: gistData.updated_at as string,
-    files: files
+    files: [] // 空文件列表，前端应该显示提示
   };
 }

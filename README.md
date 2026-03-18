@@ -7,16 +7,19 @@
 - ✅ 创建、查看和分享代码片段
 - ✅ 语法高亮显示（支持 30+ 种编程语言）
 - ✅ 响应式设计
+- ✅ 深色模式支持（自动跟随系统偏好）
 - ✅ 搜索功能
 - ✅ 用户认证系统
-- ✅ 版本控制和历史记录
+- ✅ 版本控制和历史记录查看
 - ✅ 代码编辑器（基于 Monaco Editor）
 - ✅ Gist 编辑功能
 - ✅ Gist 导出功能（ZIP 格式）
 - ✅ API 接口
 - ✅ 完整的 CRUD 操作
-- ✅ 用户头像显示（通过 Cravatar 服务）
-- ✅ 密码修改功能
+- ✅ 用户头像上传（支持自定义头像）
+- ✅ Gist 收藏功能
+- ✅ 密码修改功能（弹窗形式）
+- ✅ 丰富的首页展示（统计信息、功能介绍）
 
 ## 技术栈
 
@@ -53,6 +56,7 @@ CREATE TABLE users (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    avatar_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -132,6 +136,7 @@ npm install
 3. 设置环境变量（在项目根目录创建 `.env.local` 文件）:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
@@ -149,6 +154,15 @@ npm run dev
 - 编辑页面会预加载现有 Gist 的内容，包括标题、描述、文件名和代码内容
 - 修改完成后点击"更新 Gist"按钮保存更改
 - 每次更新都会创建新的版本历史记录，之前的版本仍可访问
+
+## 版本控制功能
+
+- **自动版本记录**：每次更新 Gist 时自动创建新版本
+- **版本查看**：在 Gist 详情页底部可查看所有历史版本
+- **历史版本浏览**：点击版本号可查看该版本的代码内容
+- **版本数据存储**：
+  - 当前版本存储在 `gist_files` 表
+  - 历史版本存储在 `gist_file_versions` 表
 
 ## 部署到 Vercel
 
@@ -174,9 +188,9 @@ vercel --prod
 
 1. **环境变量设置**：
    - 在 Vercel 项目设置中配置必要的环境变量：
-     - `NEXT_PUBLIC_SUPABASE_URL`: Supabase 项目 URL
-     - `SUPABASE_SERVICE_ROLE_KEY`: Supabase 服务角色密钥
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 匿名密钥（如果需要）
+     - `NEXT_PUBLIC_SUPABASE_URL`: Supabase 项目 URL（必需）
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 匿名密钥（必需）
+     - `SUPABASE_SERVICE_ROLE_KEY`: Supabase 服务角色密钥（必需）
 
 2. **数据库迁移**：
    - 确保 Supabase 数据库中已创建所有必需的表结构
@@ -191,8 +205,15 @@ vercel --prod
    - 确保该端点在生产环境中正确验证用户身份
 
 5. **用户头像功能**：
-   - 用户头像通过 Cravatar 服务显示（中国版的 Gravatar）
-   - 无需额外配置，系统会根据用户邮箱自动生成头像
+   - 支持用户上传自定义头像（JPG、PNG、GIF、WEBP 格式，最大 2MB）
+   - 头像存储在 Supabase Storage 的 `avatars` 存储桶中
+   - 需要在 Supabase 中创建 `avatars` 存储桶并设置为公开访问：
+     ```sql
+     -- 创建 avatars 存储桶（在 Supabase Dashboard -> Storage 中创建）
+     -- 或使用 SQL:
+     INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true);
+     ```
+   - 默认头像通过 Cravatar 服务显示（中国版的 Gravatar）
 
 6. **错误处理**：
    - 确保生产环境中不会暴露敏感错误信息给客户端
@@ -215,19 +236,25 @@ vercel --prod
 - `PUT /api/gists/{id}` - 更新 Gist（编辑功能）
 - `DELETE /api/gists/{id}` - 删除 Gist
 - `GET /api/gists/{id}/versions` - 获取 Gist 版本历史
+- `GET /api/gists/{id}/versions/{version}` - 获取特定版本内容
 - `GET /api/gists/{id}/raw/{filename}` - 获取原始文件内容
 - `GET /api/gists/{id}/export` - 导出 Gist 为 ZIP
+- `POST /api/gists/{id}/star` - 收藏/取消收藏 Gist
+- `GET /api/gists/starred` - 获取用户收藏的 Gists
 
 #### 认证相关
 - `POST /api/auth/login` - 用户登录
 - `POST /api/auth/register` - 用户注册
 - `POST /api/auth/change-password` - 用户修改密码
+- `GET /api/auth/avatar` - 获取用户头像
+- `POST /api/auth/avatar` - 上传用户头像
+- `PUT /api/auth/avatar` - 更新用户头像
 
 ## 环境变量
 
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase 项目 URL
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase 服务角色密钥
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase 匿名密钥（可选，根据安全需求配置）
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase 项目 URL（必需）
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase 匿名密钥（必需）
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase 服务角色密钥（必需，用于服务端操作）
 
 ## 项目结构
 
@@ -235,29 +262,55 @@ vercel --prod
 sify-gist/
 ├── app/                 # Next.js 14 App Router 页面
 │   ├── api/            # API 路由
+│   │   ├── auth/       # 认证相关 API
+│   │   │   ├── avatar/     # 头像上传
+│   │   │   ├── change-password/  # 修改密码
+│   │   │   ├── login/      # 登录
+│   │   │   └── register/   # 注册
+│   │   └── gists/      # Gist 相关 API
+│   │       ├── [id]/       # Gist CRUD
+│   │       │   ├── versions/   # 版本历史
+│   │       │   ├── export/     # 导出 ZIP
+│   │       │   └── star/       # 收藏
+│   │       └── starred/    # 收藏列表
 │   ├── create/         # 创建 Gist 页面
 │   ├── gists/          # Gist 详情页面（包含版本历史）
 │   │   └── [id]/       # Gist 详情、编辑和版本页面
 │   │       ├── page.tsx        # Gist 查看页面
 │   │       ├── page-client.tsx # Gist 查看页面客户端组件
 │   │       ├── edit/           # Gist 编辑页面
-│   │       │   ├── page.tsx    # 编辑页面服务端组件
-│   │       │   └── page-client.tsx # 编辑页面客户端组件
-│   │       └── versions/       # 版本历史相关组件
+│   │       └── versions/       # 版本历史页面
 │   ├── login/          # 登录页面
 │   ├── register/       # 注册页面
 │   ├── search/         # 搜索页面
+│   ├── profile/        # 个人中心页面
 │   ├── api-docs/       # API 文档页面
-│   └── page.tsx        # 首页
+│   ├── layout.tsx      # 根布局
+│   ├── navbar.tsx      # 导航栏组件
+│   ├── page.tsx        # 首页
+│   ├── icon.svg        # 网站 favicon
+│   └── apple-icon.svg  # Apple Touch 图标
 ├── components/         # React 组件
+│   ├── AvatarUpload.tsx    # 头像上传组件
+│   ├── CodeBlock.tsx       # 代码块组件
+│   ├── GistActions.tsx     # Gist 操作组件
+│   ├── GistDisplay.tsx     # Gist 显示组件
+│   ├── GistVersions.tsx    # 版本列表组件
+│   ├── ProtectedRoute.tsx  # 路由保护组件
+│   └── ThemeToggle.tsx     # 主题切换组件
 ├── lib/               # 工具函数和数据处理
 │   ├── db.ts          # 数据库连接
 │   ├── supabase.ts    # Supabase 客户端配置
+│   ├── supabase-server.ts # 服务端 Supabase 客户端
 │   ├── gists.ts       # Gist 相关操作
 │   ├── auth.ts        # 认证相关操作
+│   ├── avatar.ts      # 头像上传操作
 │   └── language-support.ts # 语言支持
 ├── public/            # 静态资源
+│   ├── favicon.svg    # 网站图标
+│   └── apple-touch-icon.svg # Apple Touch 图标
 ├── styles/            # 全局样式
+│   └── globals.css    # 全局 CSS
 ├── package.json
 ├── next.config.js
 ├── tailwind.config.js

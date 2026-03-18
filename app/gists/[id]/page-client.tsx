@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import GistDisplay from '../../../components/GistDisplay';
 import GistActions from '../../../components/GistActions';
+import GistVersions from '../../../components/GistVersions';
 
 interface File {
   id?: number;
@@ -118,6 +119,11 @@ export default function GistPageClient() {
         <div className="p-5">
           <GistDisplay gist={gist} />
         </div>
+      </div>
+      
+      {/* 版本历史 */}
+      <div className="mt-6 bg-white rounded-lg shadow-md p-5 dark:bg-gray-800 dark:shadow-gray-900/20">
+        <GistVersions gistId={gist.id} />
       </div>
     </div>
   );

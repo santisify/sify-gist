@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +14,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<any>(null);
   
-  // 密码修改相关状态
+  // 密码修改弹窗状态
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -66,6 +66,26 @@ export default function ProfilePage() {
     fetchUserData();
   }, [router]);
 
+  // 打开密码修改弹窗
+  const openPasswordModal = () => {
+    setShowPasswordModal(true);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
+  // 关闭密码修改弹窗
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
   // 处理密码修改
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,10 +129,11 @@ export default function ProfilePage() {
         
         // 在实际应用中，可能需要重新登录以确保新密码生效
         setTimeout(() => {
+          closePasswordModal();
           localStorage.removeItem('userToken');
           localStorage.removeItem('userInfo');
           router.push('/login');
-        }, 1000);
+        }, 1500);
       } else {
         setPasswordError(data.error || '密码修改失败');
       }
@@ -178,79 +199,16 @@ export default function ProfilePage() {
               </h1>
               <p className="text-gray-600 dark:text-gray-300">{userInfo?.email}</p>
             </div>
-          </div>
-        </div>
-
-        {/* 密码修改部分 */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-800 dark:shadow-gray-900/20" id="change-password">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">修改密码</h2>
-          <div className="max-w-md">
-            <form onSubmit={handlePasswordChange}>
-              <div className="mb-4">
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                  当前密码
-                </label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="输入当前密码"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                  新密码
-                </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="输入新密码（至少6位）"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                  确认新密码
-                </label>
-                <input
-                  type="password"
-                  id="confirmNewPassword"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="再次输入新密码"
-                />
-              </div>
-              {passwordError && (
-                <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
-                  {passwordError}
-                </div>
-              )}
-              {passwordSuccess && (
-                <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 dark:bg-green-900/30 dark:text-green-300">
-                  {passwordSuccess}
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={isPasswordSubmitting}
-                className={`py-2 px-4 rounded-md text-white font-medium ${
-                  isPasswordSubmitting 
-                    ? 'bg-blue-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800`}
-              >
-                {isPasswordSubmitting ? '修改中...' : '修改密码'}
-              </button>
-            </form>
+            {/* 修改密码按钮 */}
+            <button
+              onClick={openPasswordModal}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+              修改密码
+            </button>
           </div>
         </div>
 
@@ -362,6 +320,112 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* 密码修改弹窗 */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            {/* 背景遮罩 */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" 
+              onClick={closePasswordModal}
+            ></div>
+
+            {/* 弹窗内容 */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full dark:bg-gray-800">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 dark:bg-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">修改密码</h3>
+                  <button
+                    onClick={closePasswordModal}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <form onSubmit={handlePasswordChange}>
+                  <div className="mb-4">
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                      当前密码
+                    </label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="输入当前密码"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                      新密码
+                    </label>
+                    <input
+                      type="password"
+                      id="newPassword"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="输入新密码（至少6位）"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                      确认新密码
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmNewPassword"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="再次输入新密码"
+                    />
+                  </div>
+                  {passwordError && (
+                    <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
+                      {passwordError}
+                    </div>
+                  )}
+                  {passwordSuccess && (
+                    <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 dark:bg-green-900/30 dark:text-green-300">
+                      {passwordSuccess}
+                    </div>
+                  )}
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={closePasswordModal}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isPasswordSubmitting}
+                      className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
+                        isPasswordSubmitting 
+                          ? 'bg-blue-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                    >
+                      {isPasswordSubmitting ? '修改中...' : '确认修改'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }
