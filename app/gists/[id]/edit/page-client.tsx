@@ -211,8 +211,8 @@ export default function EditGistPageClient() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p>加载中...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4 dark:border-blue-400"></div>
+          <p className="dark:text-gray-300">加载中...</p>
         </div>
       </div>
     );
@@ -222,11 +222,11 @@ export default function EditGistPageClient() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900">错误</h3>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">错误</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
           >
             返回
           </button>
@@ -239,11 +239,11 @@ export default function EditGistPageClient() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900">Gist 不存在</h3>
-          <p className="mt-1 text-sm text-gray-500">请检查 Gist ID 是否正确</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Gist 不存在</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">请检查 Gist ID 是否正确</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
           >
             返回
           </button>
@@ -255,18 +255,18 @@ export default function EditGistPageClient() {
   return (
     <ProtectedRoute>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">编辑 Gist</h1>
+        <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-gray-900/20">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6 dark:text-white">编辑 Gist</h1>
           
           {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                 标题 *
               </label>
               <input
@@ -274,28 +274,28 @@ export default function EditGistPageClient() {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="为你的 Gist 添加一个标题"
                 required
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                 描述 (可选)
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="描述这个 Gist 的用途"
                 rows={2}
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="fileName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="fileName" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                 文件名
               </label>
               <input
@@ -303,16 +303,16 @@ export default function EditGistPageClient() {
                 id="fileName"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="文件名，例如: hello.js"
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                 文件内容
               </label>
-              <div className="border border-gray-300 rounded-md overflow-hidden relative">
+              <div className="border border-gray-300 rounded-md overflow-hidden relative dark:border-gray-600">
                 <div className="h-96">
                   <MonacoEditor
                     height="100%"
@@ -322,7 +322,7 @@ export default function EditGistPageClient() {
                       setFileContent(value || '');
                       console.log('Editor content changed:', value?.substring(0, 50)); // 调试日志
                     }}
-                    theme="vs-light"
+                    theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light'}
                     options={{
                       minimap: { enabled: true },
                       fontSize: 14,
@@ -335,7 +335,7 @@ export default function EditGistPageClient() {
                   />
                 </div>
               </div>
-              <div className="mt-1 text-sm text-gray-500">
+              <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 检测到的语言: {getLanguageByValue(language).label} | 内容长度: {fileContent.length}
               </div>
             </div>
@@ -346,13 +346,13 @@ export default function EditGistPageClient() {
                 disabled={isSubmitting}
                 className={`px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                } dark:focus:ring-offset-gray-800`}
               >
                 {isSubmitting ? '更新中...' : '更新 Gist'}
               </button>
               <a
                 href={`/gists/${params.id}`}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 dark:focus:ring-offset-gray-800"
               >
                 取消
               </a>

@@ -1,19 +1,18 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from './database.types';
 
-let supabaseInstance: SupabaseClient | null = null;
+let supabaseInstance: SupabaseClient<Database> | null = null;
 
-export function getSupabaseClient(): SupabaseClient {
+export function getSupabaseClient(): SupabaseClient<Database> {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    // For server-side operations requiring higher privileges, use SERVICE_ROLE_KEY
-    // For client-side operations, use NEXT_PUBLIC_SUPABASE_ANON_KEY
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase environment variables. Please ensure NEXT_PUBLIC_SUPABASE_URL and either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment.');
+      throw new Error('Missing Supabase environment variables. Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment.');
     }
 
-    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey);
   }
 
   return supabaseInstance;

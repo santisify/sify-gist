@@ -62,7 +62,7 @@ export default function ProtectedRoute({
   if (isAuthenticated === null) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p>检查登录状态...</p>
+        <p className="dark:text-gray-300">检查登录状态...</p>
       </div>
     );
   }

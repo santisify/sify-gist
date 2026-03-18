@@ -7,6 +7,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<U
       id: user.id as string,
       name: user.name as string,
       email: user.email as string,
+      avatar_url: user.avatar_url as string || undefined,
       created_at: user.created_at as string
     };
   }
@@ -60,6 +62,7 @@ export async function getUserById(id: string): Promise<User | null> {
     id: user.id as string,
     name: user.name as string,
     email: user.email as string,
+    avatar_url: user.avatar_url as string || undefined,
     created_at: user.created_at as string
   };
 }
@@ -75,6 +78,7 @@ export async function registerUser(data: RegisterData): Promise<User | null> {
       name: data.name,
       email: data.email,
       password_hash: hashedPassword,
+      avatar_url: null, // 新用户默认没有头像
       created_at: now
     });
     
@@ -85,6 +89,7 @@ export async function registerUser(data: RegisterData): Promise<User | null> {
         id,
         name: data.name,
         email: data.email,
+        avatar_url: undefined,
         created_at: now
       };
     }
@@ -97,6 +102,7 @@ export async function registerUser(data: RegisterData): Promise<User | null> {
         id: user.id as string,
         name: user.name as string,
         email: user.email as string,
+        avatar_url: user.avatar_url as string || undefined,
         created_at: user.created_at as string
       };
     }
@@ -127,6 +133,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     id: user.id as string,
     name: user.name as string,
     email: user.email as string,
+    avatar_url: user.avatar_url as string || undefined,
     created_at: user.created_at as string
   };
 }

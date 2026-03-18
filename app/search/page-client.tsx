@@ -42,7 +42,7 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">搜索结果</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-white">搜索结果</h1>
         <div className="max-w-2xl mx-auto">
           <div className="relative">
             <input
@@ -50,7 +50,7 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="搜索 Gist 标题、描述或内容..."
-              className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   // 更新 URL 参数
@@ -69,24 +69,24 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
       <div className="mt-8">
         {filteredGists.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {searchTerm ? '没有找到匹配的 Gist' : '还没有创建任何 Gist'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGists.map((gist) => (
-              <div key={gist.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+              <div key={gist.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:shadow-lg/20">
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
-                    <Link href={`/gists/${gist.id}`} className="hover:underline">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate dark:text-white">
+                    <Link href={`/gists/${gist.id}`} className="hover:underline dark:text-white dark:hover:text-blue-400">
                       {gist.title || '未命名 Gist'}
                     </Link>
                   </h3>
-                  <p className="text-gray-600 mt-2 line-clamp-2">
+                  <p className="text-gray-600 mt-2 line-clamp-2 dark:text-gray-300">
                     {gist.description || '此 Gist 没有描述'}
                   </p>
-                  <div className="mt-4 flex items-center text-sm text-gray-500">
+                  <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <span className="mr-4">📁 {gist.files.length} 文件</span>
                     <span>{new Date(gist.created_at).toLocaleDateString('zh-CN')}</span>
                   </div>

@@ -1,36 +1,58 @@
 // lib/auth-utils.ts
-// 用于检查用户认证状态的工具函数
+import { getSupabaseClient } from './supabase';
 
-export function checkAuth(): { isAuthenticated: boolean; user?: any } {
-  if (typeof window === 'undefined') {
-    // 服务端：无法直接访问 localStorage
-    // 在实际应用中，这里可能需要检查传入的 cookies 或 headers
-    return { isAuthenticated: false };
+/**
+ * 设置 Supabase 客户端的用户会话
+ * @param accessToken 用户访问令牌
+ */
+export async function setAuthSession(accessToken: string) {
+  const supabase = getSupabaseClient();
+  
+  // 直接设置认证头，这在客户端环境中通常不是必需的，
+  // 因为 Supabase 客户端会自行处理认证
+  // 但我们可以确保使用正确的令牌
+  const { data: { session }, error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: '' // 在实际应用中，您可能还需要刷新令牌
+  });
+
+  if (error) {
+    console.error('设置会话失败:', error);
+    throw error;
   }
-  
-  const token = localStorage.getItem('userToken');
-  const userInfo = localStorage.getItem('userInfo');
-  
-  if (token && userInfo) {
-    try {
-      const user = JSON.parse(userInfo);
-      return { 
-        isAuthenticated: true, 
-        user: user 
-      };
-    } catch (e) {
-      console.error('解析用户信息失败:', e);
-      return { isAuthenticated: false };
-    }
-  }
-  
-  return { isAuthenticated: false };
+
+  return session;
 }
 
-// 用于在服务端组件中检查认证状态的异步函数
-export async function checkAuthServer(): Promise<{ isAuthenticated: boolean; user?: any }> {
-  // 在服务端组件中，我们通常需要从 cookies 或 headers 中获取认证信息
-  // 由于我们使用的是客户端存储，这里返回未认证状态
-  // 实际应用中，可能需要实现 JWT 验证或会话检查
-  return { isAuthenticated: false };
+/**
+ * 从本地存储获取用户令牌
+ */
+export function getUserToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
+  return localStorage.getItem('userToken');
+}
+
+/**
+ * 从本地存储获取用户信息
+ */
+export function getUserInfo(): any {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
+  const userInfo = localStorage.getItem('userInfo');
+  return userInfo ? JSON.parse(userInfo) : null;
+}
+
+/**
+ * 检查用户是否已认证
+ */
+export function isAuthenticated(): boolean {
+  const token = getUserToken();
+  const userInfo = getUserInfo();
+  
+  return !!token && !!userInfo;
 }

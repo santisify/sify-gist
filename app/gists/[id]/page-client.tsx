@@ -77,8 +77,8 @@ export default function GistPageClient() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p>加载中...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4 dark:border-blue-400"></div>
+          <p className="dark:text-gray-300">加载中...</p>
         </div>
       </div>
     );
@@ -88,8 +88,8 @@ export default function GistPageClient() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900">Gist 不存在</h3>
-          <p className="mt-1 text-sm text-gray-500">请检查 Gist ID 是否正确</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Gist 不存在</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">请检查 Gist ID 是否正确</p>
         </div>
       </div>
     );
@@ -97,13 +97,13 @@ export default function GistPageClient() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-5 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">{gist.title || '未命名 Gist'}</h1>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:shadow-gray-900/20">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{gist.title || '未命名 Gist'}</h1>
           {gist.description && (
-            <p className="text-gray-600 mt-2">{gist.description}</p>
+            <p className="text-gray-600 mt-2 dark:text-gray-300">{gist.description}</p>
           )}
-          <div className="mt-3 text-sm text-gray-500">
+          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
             创建于 {new Date(gist.created_at).toLocaleString('zh-CN')}
             {gist.updated_at !== gist.created_at && (
               <span> · 更新于 {new Date(gist.updated_at).toLocaleString('zh-CN')}</span>

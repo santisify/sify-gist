@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Gist } from '@/lib/gists';
+import AvatarUpload from '@/components/AvatarUpload';
 
 export default function ProfilePage() {
   const [userGists, setUserGists] = useState<Gist[]>([]);
@@ -149,34 +150,44 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarUpdate = (newAvatarUrl: string) => {
+    // 更新本地存储的用户信息
+    const updatedUserInfo = {
+      ...userInfo,
+      avatar_url: newAvatarUrl
+    };
+    setUserInfo(updatedUserInfo);
+    localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+  };
+
   const currentGists = activeTab === 'created' ? userGists : starredGists;
 
   return (
     <ProtectedRoute>
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex items-center">
-            <img 
-              src={`https://cravatar.cn/avatar/${userInfo?.email || ''}?d=identicon&s=64`}
-              alt="用户头像"
-              className="w-16 h-16 rounded-full border border-gray-300"
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-800 dark:shadow-gray-900/20">
+          <div className="flex flex-col items-center">
+            <AvatarUpload 
+              userId={userInfo?.id} 
+              currentAvatar={userInfo?.avatar_url} 
+              onAvatarUpdate={handleAvatarUpdate} 
             />
-            <div className="ml-4">
-              <h1 className="text-2xl font-bold text-gray-900">
+            <div className="mt-4 text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1 dark:text-white">
                 {userInfo?.name || userInfo?.email?.split('@')[0] || '用户'}
               </h1>
-              <p className="text-gray-600">{userInfo?.email}</p>
+              <p className="text-gray-600 dark:text-gray-300">{userInfo?.email}</p>
             </div>
           </div>
         </div>
 
         {/* 密码修改部分 */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8" id="change-password">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">修改密码</h2>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-800 dark:shadow-gray-900/20" id="change-password">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">修改密码</h2>
           <div className="max-w-md">
             <form onSubmit={handlePasswordChange}>
               <div className="mb-4">
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   当前密码
                 </label>
                 <input
@@ -185,12 +196,12 @@ export default function ProfilePage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="输入当前密码"
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   新密码
                 </label>
                 <input
@@ -200,12 +211,12 @@ export default function ProfilePage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="输入新密码（至少6位）"
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   确认新密码
                 </label>
                 <input
@@ -214,17 +225,17 @@ export default function ProfilePage() {
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="再次输入新密码"
                 />
               </div>
               {passwordError && (
-                <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+                <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
                   {passwordError}
                 </div>
               )}
               {passwordSuccess && (
-                <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4">
+                <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 dark:bg-green-900/30 dark:text-green-300">
                   {passwordSuccess}
                 </div>
               )}
@@ -235,7 +246,7 @@ export default function ProfilePage() {
                   isPasswordSubmitting 
                     ? 'bg-blue-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800`}
               >
                 {isPasswordSubmitting ? '修改中...' : '修改密码'}
               </button>
@@ -243,15 +254,15 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:shadow-gray-900/20">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('created')}
                 className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
                   activeTab === 'created'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 我创建的 ({userGists.length})
@@ -260,8 +271,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab('starred')}
                 className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
                   activeTab === 'starred'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 我收藏的 ({starredGists.length})
@@ -269,21 +280,21 @@ export default function ProfilePage() {
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-6 dark:text-gray-300">
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-                <p>加载中...</p>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4 dark:border-blue-400"></div>
+                <p className="dark:text-gray-300">加载中...</p>
               </div>
             ) : currentGists.length === 0 ? (
               <div className="text-center py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
                   {activeTab === 'created' ? '还没有创建 Gist' : '还没有收藏 Gist'}
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {activeTab === 'created' 
                     ? '开始创建你的第一个代码片段吧！' 
                     : '浏览并收藏你喜欢的代码片段吧！'}
@@ -292,7 +303,7 @@ export default function ProfilePage() {
                   <div className="mt-6">
                     <Link
                       href="/create"
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -305,11 +316,11 @@ export default function ProfilePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentGists.map((gist) => (
-                  <div key={gist.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                  <div key={gist.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:shadow-lg/20">
                     <div className="p-5">
                       <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                          <Link href={`/gists/${gist.id}`} className="hover:underline">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate dark:text-white">
+                          <Link href={`/gists/${gist.id}`} className="hover:underline dark:text-white dark:hover:text-blue-400">
                             {gist.title || '未命名 Gist'}
                           </Link>
                         </h3>
@@ -317,7 +328,7 @@ export default function ProfilePage() {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => router.push(`/gists/${gist.id}/edit`)}
-                              className="text-gray-500 hover:text-blue-600"
+                              className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-600"
                               title="编辑"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -326,7 +337,7 @@ export default function ProfilePage() {
                             </button>
                             <button
                               onClick={() => handleDeleteGist(gist.id)}
-                              className="text-gray-500 hover:text-red-600"
+                              className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                               title="删除"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -336,10 +347,10 @@ export default function ProfilePage() {
                           </div>
                         )}
                       </div>
-                      <p className="text-gray-600 mt-2 line-clamp-2">
+                      <p className="text-gray-600 mt-2 line-clamp-2 dark:text-gray-300">
                         {gist.description || '此 Gist 没有描述'}
                       </p>
-                      <div className="mt-4 flex items-center text-sm text-gray-500">
+                      <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <span className="mr-4">📁 {gist.files.length} 文件</span>
                         <span>{new Date(gist.created_at).toLocaleDateString('zh-CN')}</span>
                       </div>

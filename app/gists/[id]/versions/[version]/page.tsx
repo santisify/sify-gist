@@ -40,15 +40,15 @@ export default async function GistVersionPage({
 
   return (
     <div className="max-w-7xl mx-auto px-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-5 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:shadow-gray-900/20">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {gist.title || '未命名 Gist'} (版本 #{versionNumber})
           </h1>
           {gist.description && (
-            <p className="text-gray-600 mt-2">{gist.description}</p>
+            <p className="text-gray-600 mt-2 dark:text-gray-300">{gist.description}</p>
           )}
-          <div className="mt-3 text-sm text-gray-500">
+          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
             版本 #{versionNumber} 创建于 {new Date(gist.created_at).toLocaleString('zh-CN')}
           </div>
         </div>

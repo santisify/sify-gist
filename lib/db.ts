@@ -1,6 +1,7 @@
 // lib/db.ts
 import { getSupabaseClient } from './supabase';
 import { Gist, File } from './gists';
+import { Database } from './database.types';
 
 // 检查是否在服务器端
 function isServer() {
@@ -42,7 +43,7 @@ export async function initDb() {
 }
 
 // 以下是一些辅助函数，用于将现有数据库操作映射到 Supabase
-export async function insert<T = any>(table: string, data: any): Promise<T[] | null> {
+export async function insert<T = any>(table: keyof Database['public']['Tables'], data: any): Promise<T[] | null> {
   const supabase = getSupabaseClient();
   const { data: result, error } = await supabase
     .from(table)
@@ -56,7 +57,7 @@ export async function insert<T = any>(table: string, data: any): Promise<T[] | n
   return result;
 }
 
-export async function select<T = any>(table: string, options?: { where?: any; order?: string; limit?: number }): Promise<T[]> {
+export async function select<T = any>(table: keyof Database['public']['Tables'], options?: { where?: any; order?: string; limit?: number }): Promise<T[]> {
   const supabase = getSupabaseClient();
   let query = supabase.from(table).select();
 
@@ -86,7 +87,7 @@ export async function select<T = any>(table: string, options?: { where?: any; or
   return data || [];
 }
 
-export async function update<T = any>(table: string, data: any, where: any): Promise<T[] | null> {
+export async function update<T = any>(table: keyof Database['public']['Tables'], data: any, where: any): Promise<T[] | null> {
   const supabase = getSupabaseClient();
   let query = supabase.from(table).update(data);
 
@@ -104,7 +105,7 @@ export async function update<T = any>(table: string, data: any, where: any): Pro
   return result;
 }
 
-export async function remove<T = any>(table: string, where: any): Promise<T[] | null> {
+export async function remove<T = any>(table: keyof Database['public']['Tables'], where: any): Promise<T[] | null> {
   const supabase = getSupabaseClient();
   let query = supabase.from(table).delete();
 

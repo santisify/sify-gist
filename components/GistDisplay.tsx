@@ -98,9 +98,9 @@ export default function GistDisplay({ gist }: { gist: Gist }) {
       <div className="mb-4 flex flex-wrap gap-2">
         <button 
           onClick={handleCopyUrl}
-          className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition duration-200 border border-gray-300"
+          className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition duration-200 border border-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 dark:border-gray-600"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           {copiedUrl ? '已复制!' : '复制链接'}
@@ -108,9 +108,9 @@ export default function GistDisplay({ gist }: { gist: Gist }) {
         
         <button 
           onClick={handleShare}
-          className="flex items-center text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md transition duration-200 border border-blue-200"
+          className="flex items-center text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md transition duration-200 border border-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 dark:text-blue-300 dark:border-blue-800/50"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
           分享
@@ -119,36 +119,36 @@ export default function GistDisplay({ gist }: { gist: Gist }) {
         <button 
           onClick={handleExport}
           disabled={exporting}
-          className="flex items-center text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-md transition duration-200 border border-green-200 disabled:opacity-50"
+          className="flex items-center text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-md transition duration-200 border border-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:hover:bg-green-800/50 dark:text-green-300 dark:border-green-800/50"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           {exporting ? '导出中...' : '导出 ZIP'}
         </button>
       </div>
       
-      <div className="border border-gray-200 rounded-md overflow-hidden">
+      <div className="border border-gray-200 rounded-md overflow-hidden dark:border-gray-700">
         {gist.files.map((file, fileIndex) => (
           <div key={fileIndex} className="mb-6 last:mb-0">
-            <div className="flex justify-between items-center bg-gray-50 px-4 py-2 border-b border-gray-200">
+            <div className="flex justify-between items-center bg-gray-50 px-4 py-2 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
               <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700 font-mono">{file.filename}</span>
+                <span className="text-sm font-medium text-gray-700 font-mono dark:text-gray-300">{file.filename}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <a 
                   href={`/api/gists/${gist.id}/raw/${encodeURIComponent(file.filename)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded"
+                  className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
                 >
                   原始
                 </a>
                 <CopyToClipboard text={file.content} onCopy={() => handleCopy(file.filename, file.content)}>
-                  <button className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded">
+                  <button className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200">
                     {copied[file.filename] ? '已复制!' : '复制'}
                   </button>
                 </CopyToClipboard>

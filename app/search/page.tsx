@@ -1,6 +1,6 @@
 // app/search/page.tsx
 import { Suspense } from 'react';
-import { getAllGists, Gist } from '../../lib/gists';
+import { getAllGists, Gist } from '@/lib/gists';
 import SearchPageClientWrapper from './page-wrapper';
 
 interface SearchPageProps {
