@@ -1,6 +1,6 @@
 // lib/gists.ts
 import { nanoid } from 'nanoid';
-import { getDb, select, insert, update, remove } from './db';
+import select, { getDb, insert, update, remove } from './db';
 
 export interface File {
   id?: number;

@@ -1,6 +1,6 @@
 // app/api/auth/change-password/route.ts
 import { NextRequest } from 'next/server';
-import { select, update } from '@/lib/db';
+import select, { update } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {

@@ -57,13 +57,13 @@ export async function insert<T = any>(table: keyof Database['public']['Tables'],
   return result;
 }
 
-export async function select<T = any>(table: keyof Database['public']['Tables'], options?: { where?: any; order?: string; limit?: number }): Promise<T[]> {
+export async function select<T = any>(table: keyof Database['public']['Tables'], options?: { where?: any; order?: string; limit?: number }): Promise<any[]> {
   const supabase = getSupabaseClient();
   let query = supabase.from(table).select();
 
   if (options?.where) {
     for (const [key, value] of Object.entries(options.where)) {
-      query = query.eq(key, value);
+      query = query.eq(key as string, value as any);
     }
   }
 
@@ -87,12 +87,14 @@ export async function select<T = any>(table: keyof Database['public']['Tables'],
   return data || [];
 }
 
+export default select
+
 export async function update<T = any>(table: keyof Database['public']['Tables'], data: any, where: any): Promise<T[] | null> {
   const supabase = getSupabaseClient();
   let query = supabase.from(table).update(data);
 
   for (const [key, value] of Object.entries(where)) {
-    query = query.eq(key, value);
+    query = query.eq(key as string , value as any);
   }
 
   const { data: result, error } = await query;
@@ -110,7 +112,7 @@ export async function remove<T = any>(table: keyof Database['public']['Tables'],
   let query = supabase.from(table).delete();
 
   for (const [key, value] of Object.entries(where)) {
-    query = query.eq(key, value);
+    query = query.eq(key as string, value as any);
   }
 
   const { data, error } = await query;

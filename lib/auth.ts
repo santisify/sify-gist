@@ -1,5 +1,5 @@
 // lib/auth.ts
-import { select, insert } from './db';
+import select, { insert } from './db';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 

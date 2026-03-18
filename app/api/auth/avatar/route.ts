@@ -1,11 +1,13 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest } from 'next/server';
-import { select, update } from '@/lib/db';
+import select, { update } from '@/lib/db';
 import { deleteAvatar } from '@/lib/avatar';
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId');
-    
+
     if (!userId) {
       return new Response(
         JSON.stringify({ error: '用户ID是必需的' }),
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // 查询数据库获取用户头像URL
     const users = await select('users', { where: { id: userId } });
-    
+
     if (users.length === 0) {
       return new Response(
         JSON.stringify({ error: '用户不存在' }),
@@ -71,9 +73,9 @@ export async function PUT(request: NextRequest) {
             await deleteAvatar(oldAvatarUrl);
           }
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           message: '头像更新成功',
-          avatarUrl: avatarUrl 
+          avatarUrl: avatarUrl
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
