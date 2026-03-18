@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { uploadAvatar } from '@/lib/avatar';
-import { getUserToken } from '@/lib/auth-utils';
+import { useState, useRef } from 'react';
 
 interface AvatarUploadProps {
   userId: string;
@@ -20,53 +18,31 @@ export default function AvatarUpload({ userId, currentAvatar, onAvatarUpdate }: 
     const file = e.target.files?.[0];
     if (!file || !userId) return;
 
-    // 检查用户认证状态
-    const token = getUserToken();
-    if (!token) {
-      setUploadError('请先登录后再上传头像');
-      return;
-    }
-
     setIsUploading(true);
     setUploadError(null);
 
     try {
-      // 上传头像到Supabase Storage
-      const uploadedUrl = await uploadAvatar(file, userId);
-      
-      if (uploadedUrl) {
-        // 更新数据库中的头像URL
-        const response = await fetch('/api/auth/avatar', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`, // 添加认证头
-          },
-          body: JSON.stringify({
-            userId,
-            avatarUrl: uploadedUrl,
-          }),
-        });
+      // 创建 FormData 并上传到 API
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', userId);
 
-        const result = await response.json();
+      const response = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        body: formData,
+      });
 
-        if (response.ok) {
-          setAvatarUrl(uploadedUrl);
-          onAvatarUpdate(uploadedUrl);
-        } else {
-          setUploadError(result.error || '更新头像失败');
-        }
+      const result = await response.json();
+
+      if (response.ok && result.avatarUrl) {
+        setAvatarUrl(result.avatarUrl);
+        onAvatarUpdate(result.avatarUrl);
       } else {
-        setUploadError('上传头像失败');
+        setUploadError(result.error || '上传头像失败');
       }
     } catch (error: any) {
       console.error('上传头像时出错:', error);
-      // 根据错误类型提供更具体的错误信息
-      if (error?.message?.includes('Invalid Compact JWS')) {
-        setUploadError('认证失败，请重新登录后再试');
-      } else {
-        setUploadError(error instanceof Error ? error.message : '上传头像时发生错误');
-      }
+      setUploadError(error instanceof Error ? error.message : '上传头像时发生错误');
     } finally {
       setIsUploading(false);
     }
@@ -120,7 +96,7 @@ export default function AvatarUpload({ userId, currentAvatar, onAvatarUpdate }: 
       )}
       
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        支持 JPG, PNG, GIF 格式，最大 2MB
+        支持 JPG, PNG, GIF, WEBP 格式，最大 2MB
       </p>
     </div>
   );
