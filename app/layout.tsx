@@ -20,18 +20,15 @@ export const metadata: Metadata = {
 const themeScript = `
   (function() {
     try {
-      // 从 localStorage 获取用户首选主题
       const storedTheme = localStorage.getItem('theme');
       
       if (storedTheme) {
-        // 如果有存储的主题，直接应用
         if (storedTheme === 'dark') {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
       } else {
-        // 如果没有存储的主题，检查系统偏好
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.classList.add('dark');
         } else {
@@ -39,7 +36,7 @@ const themeScript = `
         }
       }
     } catch (e) {
-      // 如果出现错误，什么都不做，让JS版本的主题上下文来处理
+      // 如果出现错误，什么都不做
     }
   })();
 `;
@@ -56,14 +53,14 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+          <div className="min-h-screen flex flex-col">
             <Navbar />
-            <main className="flex-1">
+            <main className="flex-1 py-6">
               {children}
             </main>
-            <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-6 mt-auto">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-                © {new Date().getFullYear()} Sify Gist - 代码片段分享平台
+            <footer className="border-t py-6" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="container-main text-center" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="text-sm">Powered by Sify Gist</span>
               </div>
             </footer>
           </div>

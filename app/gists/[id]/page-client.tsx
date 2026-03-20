@@ -33,7 +33,6 @@ export default function GistPageClient() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // 检查认证状态
     const token = localStorage.getItem('userToken');
     const userInfo = localStorage.getItem('userInfo');
     
@@ -59,8 +58,6 @@ export default function GistPageClient() {
         if (response.ok) {
           const data = await response.json();
           setGist(data);
-        } else {
-          console.error('获取 Gist 失败:', response.statusText);
         }
       } catch (error) {
         console.error('获取 Gist 时出错:', error);
@@ -76,10 +73,10 @@ export default function GistPageClient() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="container-main py-8">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4 dark:border-blue-400"></div>
-          <p className="dark:text-gray-300">加载中...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
+          <p className="mt-2" style={{ color: 'var(--color-text-secondary)' }}>加载中...</p>
         </div>
       </div>
     );
@@ -87,28 +84,33 @@ export default function GistPageClient() {
 
   if (!gist) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="container-main py-8">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Gist 不存在</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">请检查 Gist ID 是否正确</p>
+          <h3 className="text-lg font-medium" style={{ color: 'var(--color-text-main)' }}>Gist 不存在</h3>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>请检查 Gist ID 是否正确</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:shadow-gray-900/20">
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{gist.title || '未命名 Gist'}</h1>
-          {gist.description && (
-            <p className="text-gray-600 mt-2 dark:text-gray-300">{gist.description}</p>
-          )}
-          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            创建于 {new Date(gist.created_at).toLocaleString('zh-CN')}
-            {gist.updated_at !== gist.created_at && (
-              <span> · 更新于 {new Date(gist.updated_at).toLocaleString('zh-CN')}</span>
+    <div className="container-main py-6">
+      {/* Gist 头部信息 */}
+      <div className="mb-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>
+              {gist.title || '未命名 Gist'}
+            </h1>
+            {gist.description && (
+              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>{gist.description}</p>
             )}
+            <div className="flex items-center gap-2 mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              <span>创建于 {new Date(gist.created_at).toLocaleString('zh-CN')}</span>
+              {gist.updated_at !== gist.created_at && (
+                <span>· 更新于 {new Date(gist.updated_at).toLocaleString('zh-CN')}</span>
+              )}
+            </div>
           </div>
           <GistActions 
             gistId={gist.id} 
@@ -116,13 +118,15 @@ export default function GistPageClient() {
             userId={userId} 
           />
         </div>
-        <div className="p-5">
-          <GistDisplay gist={gist} />
-        </div>
+      </div>
+
+      {/* 代码区域 */}
+      <div className="gist-card overflow-hidden">
+        <GistDisplay gist={gist} />
       </div>
       
       {/* 版本历史 */}
-      <div className="mt-6 bg-white rounded-lg shadow-md p-5 dark:bg-gray-800 dark:shadow-gray-900/20">
+      <div className="mt-6">
         <GistVersions gistId={gist.id} />
       </div>
     </div>

@@ -17,7 +17,6 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
   const router = useRouter();
 
   useEffect(() => {
-    // 从 URL 参数获取初始查询
     const query = searchParams?.get('q') || '';
     setSearchTerm(query);
   }, [searchParams]);
@@ -40,20 +39,20 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
   }, [searchTerm, gists]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-white">搜索结果</h1>
-        <div className="max-w-2xl mx-auto">
+    <div className="container-main py-6">
+      {/* 搜索头部 */}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold mb-4" style={{ color: 'var(--color-text-main)' }}>搜索 Gist</h1>
+        <div className="max-w-xl">
           <div className="relative">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="搜索 Gist 标题、描述或内容..."
-              className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="搜索标题、描述或代码内容..."
+              className="w-full px-4 py-2 pr-10 text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  // 更新 URL 参数
                   if (searchTerm.trim()) {
                     router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
                   } else {
@@ -62,36 +61,57 @@ export default function SearchPageClient({ gists }: SearchPageClientProps) {
                 }
               }}
             />
+            <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
       </div>
 
-      <div className="mt-8">
+      {/* 搜索结果 */}
+      <div className="mt-6">
         {filteredGists.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="gist-card text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p style={{ color: 'var(--color-text-secondary)' }}>
               {searchTerm ? '没有找到匹配的 Gist' : '还没有创建任何 Gist'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="gist-card overflow-hidden">
             {filteredGists.map((gist) => (
-              <div key={gist.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:shadow-lg/20">
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate dark:text-white">
-                    <Link href={`/gists/${gist.id}`} className="hover:underline dark:text-white dark:hover:text-blue-400">
+              <Link 
+                key={gist.id} 
+                href={`/gists/${gist.id}`}
+                className="list-item"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <h3 className="font-medium truncate" style={{ color: 'var(--color-text-main)' }}>
                       {gist.title || '未命名 Gist'}
-                    </Link>
-                  </h3>
-                  <p className="text-gray-600 mt-2 line-clamp-2 dark:text-gray-300">
-                    {gist.description || '此 Gist 没有描述'}
-                  </p>
-                  <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                    <span className="mr-4">📁 {gist.files.length} 文件</span>
-                    <span>{new Date(gist.created_at).toLocaleDateString('zh-CN')}</span>
+                    </h3>
                   </div>
+                  {gist.description && (
+                    <p className="text-sm mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                      {gist.description}
+                    </p>
+                  )}
                 </div>
-              </div>
+                <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                  <span className="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {gist.files.length} 文件
+                  </span>
+                  <span>{new Date(gist.created_at).toLocaleDateString('zh-CN')}</span>
+                </div>
+              </Link>
             ))}
           </div>
         )}

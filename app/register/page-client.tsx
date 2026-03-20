@@ -21,7 +21,6 @@ export default function RegisterPageClient() {
     setIsSubmitting(true);
     setError(null);
 
-    // 验证密码匹配
     if (password !== confirmPassword) {
       setError('两次输入的密码不一致');
       setIsSubmitting(false);
@@ -36,7 +35,6 @@ export default function RegisterPageClient() {
       });
 
       if (response.ok) {
-        // 注册成功，重定向到登录页面或指定页面
         router.push(redirect);
       } else {
         const data = await response.json();
@@ -50,96 +48,102 @@ export default function RegisterPageClient() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 dark:shadow-gray-900/20">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 dark:text-white">注册新账户</h1>
-      
-      {error && (
-        <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
-          {error}
+    <div className="container-main py-16">
+      <div className="max-w-sm mx-auto">
+        <div className="gist-card p-6">
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="w-12 h-12">
+                <rect x="2" y="2" width="28" height="28" rx="6" fill="var(--color-primary)" />
+                <path d="M11 10L6 16L11 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 10L26 16L21 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M18 8L14 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>注册新账户</h1>
+          </div>
+          
+          {error && (
+            <div className="mb-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                姓名
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-sm"
+                placeholder="输入您的姓名"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                邮箱
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-sm"
+                placeholder="your@email.com"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                密码
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-sm"
+                placeholder="至少8位密码"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                确认密码
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 text-sm"
+                placeholder="再次输入密码"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full btn-primary py-2"
+            >
+              {isSubmitting ? '注册中...' : '注册'}
+            </button>
+          </form>
+
+          <div className="mt-4 text-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            <p>
+              已有账户？{' '}
+              <Link href="/login" style={{ color: 'var(--color-primary)' }}>
+                立即登录
+              </Link>
+            </p>
+          </div>
         </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-            姓名
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="输入您的姓名"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-            邮箱
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="your@email.com"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-            密码
-          </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="至少8位密码"
-          />
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-            确认密码
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="再次输入密码"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-            isSubmitting 
-              ? 'bg-blue-400 cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700'
-          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800`}
-        >
-          {isSubmitting ? '注册中...' : '注册'}
-        </button>
-      </form>
-
-      <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-        <p>
-          已有账户？{' '}
-          <Link href="/login" className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300">
-            立即登录
-          </Link>
-        </p>
       </div>
     </div>
   );
