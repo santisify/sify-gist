@@ -1,7 +1,7 @@
 // app/api/gists/starred/route.ts
 import { NextRequest } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
-import { Gist, File } from '@/lib/gists';
+import { Gist, File, Visibility } from '@/lib/gists';
 
 // 修复Next.js构建错误
 export const dynamic = 'force-dynamic';
@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
           user_id: gistData.user_id as string,
           title: gistData.title as string,
           description: gistData.description as string,
+          visibility: (gistData.visibility as Visibility) || 'public',
           created_at: gistData.created_at as string,
           updated_at: gistData.updated_at as string,
           files: files

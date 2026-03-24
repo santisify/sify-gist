@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { getMonacoLanguage, getLanguageByValue } from '@/lib/language-support';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { Visibility } from '@/lib/gists';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -23,9 +24,12 @@ export default function CreateGistPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [visibility, setVisibility] = useState<Visibility>('public');
   const [fileName, setFileName] = useState('file.txt');
   const [fileContent, setFileContent] = useState('');
   const [language, setLanguage] = useState('text');
+  const [topics, setTopics] = useState<string[]>([]);
+  const [topicInput, setTopicInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,6 +92,7 @@ export default function CreateGistPage() {
         'toml': 'toml',
         'txt': 'text',
         'log': 'text',
+        'csv': 'csv',
       };
       
       return extensionMap[extension] || 'text';
@@ -96,6 +101,25 @@ export default function CreateGistPage() {
     const detectedLanguage = detectLanguageFromExtension(fileName);
     setLanguage(detectedLanguage);
   }, [fileName]);
+
+  const handleAddTopic = () => {
+    const topic = topicInput.trim().toLowerCase();
+    if (topic && !topics.includes(topic) && topics.length < 5) {
+      setTopics([...topics, topic]);
+      setTopicInput('');
+    }
+  };
+
+  const handleRemoveTopic = (topic: string) => {
+    setTopics(topics.filter(t => t !== topic));
+  };
+
+  const handleTopicKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTopic();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,12 +158,14 @@ export default function CreateGistPage() {
         body: JSON.stringify({
           title,
           description,
+          visibility,
           files: [{
             filename: fileName,
             content: currentFileContent,
             language
           }],
-          user_id: userId
+          user_id: userId,
+          topics
         })
       });
       
@@ -200,6 +226,131 @@ export default function CreateGistPage() {
                 placeholder="描述这个 Gist 的用途"
                 rows={2}
               />
+            </div>
+
+            {/* 标签 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                标签 (最多 5 个)
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={topicInput}
+                  onChange={(e) => setTopicInput(e.target.value)}
+                  onKeyDown={handleTopicKeyDown}
+                  className="flex-1 px-3 py-2 text-sm"
+                  placeholder="输入标签后按 Enter 或点击添加"
+                  disabled={topics.length >= 5}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTopic}
+                  disabled={!topicInput.trim() || topics.length >= 5}
+                  className="btn btn-sm"
+                >
+                  添加
+                </button>
+              </div>
+              {topics.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {topics.map(topic => (
+                    <span
+                      key={topic}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
+                      style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                    >
+                      {topic}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTopic(topic)}
+                        className="hover:opacity-75"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                标签可以帮助其他人发现您的 Gist，例如: javascript, python, tutorial
+              </p>
+            </div>
+
+            {/* 可见性选择 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+                可见性
+              </label>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="public"
+                    checked={visibility === 'public'}
+                    onChange={() => setVisibility('public')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      公开
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      所有人可见
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="unlisted"
+                    checked={visibility === 'unlisted'}
+                    onChange={() => setVisibility('unlisted')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                      未列出
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      仅通过链接可访问
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="private"
+                    checked={visibility === 'private'}
+                    onChange={() => setVisibility('private')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      私有
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      仅自己可见
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
 
             {/* 文件名 */}

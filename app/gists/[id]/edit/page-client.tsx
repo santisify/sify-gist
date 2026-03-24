@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { getMonacoLanguage, getLanguageByValue } from '@/lib/language-support';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { Visibility } from '@/lib/gists';
 
 // 动态导入 Monaco Editor
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
@@ -34,6 +35,7 @@ interface Gist {
   user_id?: string;
   title?: string;
   description?: string;
+  visibility: Visibility;
   created_at: string;
   updated_at: string;
   files: File[];
@@ -45,6 +47,7 @@ export default function EditGistPageClient() {
   const [gist, setGist] = useState<Gist | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [visibility, setVisibility] = useState<Visibility>('public');
   const [fileName, setFileName] = useState('file.txt');
   const [fileContent, setFileContent] = useState('');
   const [language, setLanguage] = useState('text');
@@ -64,6 +67,7 @@ export default function EditGistPageClient() {
           // 设置表单初始值
           setTitle(data.title || '');
           setDescription(data.description || '');
+          setVisibility(data.visibility || 'public');
           if (data.files && data.files.length > 0) {
             const firstFile = data.files[0];
             setFileName(firstFile.filename);
@@ -91,7 +95,6 @@ export default function EditGistPageClient() {
     const detectLanguageFromExtension = (filename: string) => {
       const extension = filename.split('.').pop()?.toLowerCase() || '';
       
-      // 常见的文件扩展名映射
       const extensionMap: Record<string, string> = {
         'js': 'javascript',
         'jsx': 'javascript',
@@ -141,7 +144,7 @@ export default function EditGistPageClient() {
         'log': 'text',
       };
       
-      return extensionMap[extension] || 'text'; // 默认为text
+      return extensionMap[extension] || 'text';
     };
     
     const detectedLanguage = detectLanguageFromExtension(fileName);
@@ -154,7 +157,6 @@ export default function EditGistPageClient() {
     setError(null);
 
     try {
-      // 验证必需字段
       if (!title.trim()) {
         setError('标题不能为空');
         setIsSubmitting(false);
@@ -173,7 +175,6 @@ export default function EditGistPageClient() {
         return;
       }
       
-      // 通过 API 调用更新 Gist
       const response = await fetch(`/api/gists/${params.id}`, {
         method: 'PUT',
         headers: {
@@ -182,6 +183,7 @@ export default function EditGistPageClient() {
         body: JSON.stringify({
           title,
           description,
+          visibility,
           files: [{
             filename: fileName,
             content: fileContent,
@@ -196,12 +198,10 @@ export default function EditGistPageClient() {
       }
       
       const updatedGist = await response.json();
-      
-      console.log('成功更新 Gist:', updatedGist.id); // 调试日志
       router.push(`/gists/${updatedGist.id}`);
       router.refresh();
     } catch (err) {
-      console.error('更新 Gist 失败:', err); // 调试日志
+      console.error('更新 Gist 失败:', err);
       setError('更新 Gist 时出错: ' + (err as Error).message);
       setIsSubmitting(false);
     }
@@ -209,27 +209,25 @@ export default function EditGistPageClient() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4 dark:border-blue-400"></div>
-          <p className="dark:text-gray-300">加载中...</p>
+      <div className="container-main py-6">
+        <div className="flex justify-center py-12">
+          <div className="loading-spinner"></div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !gist) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">错误</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
-          >
-            返回
-          </button>
+      <div className="container-main py-6">
+        <div className="card">
+          <div className="empty-state">
+            <h3 className="empty-state-title">错误</h3>
+            <p className="empty-state-desc">{error}</p>
+            <button onClick={() => router.back()} className="btn btn-primary mt-4">
+              返回
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -237,16 +235,15 @@ export default function EditGistPageClient() {
 
   if (!gist) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Gist 不存在</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">请检查 Gist ID 是否正确</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
-          >
-            返回
-          </button>
+      <div className="container-main py-6">
+        <div className="card">
+          <div className="empty-state">
+            <h3 className="empty-state-title">Gist 不存在</h3>
+            <p className="empty-state-desc">请检查 Gist ID 是否正确</p>
+            <button onClick={() => router.back()} className="btn btn-primary mt-4">
+              返回
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -254,108 +251,183 @@ export default function EditGistPageClient() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800 dark:shadow-gray-900/20">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 dark:text-white">编辑 Gist</h1>
+      <div className="container-main py-6">
+        <div className="gist-card">
+          {/* 头部 */}
+          <div className="p-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>编辑 Gist</h1>
+          </div>
           
           {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 dark:bg-red-900/30 dark:text-red-300">
+            <div className="mx-4 mt-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="p-4">
+            {/* 标题 */}
             <div className="mb-4">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
                 标题 *
               </label>
               <input
                 type="text"
-                id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 text-sm"
                 placeholder="为你的 Gist 添加一个标题"
                 required
               />
             </div>
 
+            {/* 描述 */}
             <div className="mb-4">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
                 描述 (可选)
               </label>
               <textarea
-                id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 text-sm"
                 placeholder="描述这个 Gist 的用途"
                 rows={2}
               />
             </div>
 
+            {/* 可见性选择 */}
             <div className="mb-4">
-              <label htmlFor="fileName" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+                可见性
+              </label>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="public"
+                    checked={visibility === 'public'}
+                    onChange={() => setVisibility('public')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      公开
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      所有人可见
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="unlisted"
+                    checked={visibility === 'unlisted'}
+                    onChange={() => setVisibility('unlisted')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                      未列出
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      仅通过链接可访问
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="private"
+                    checked={visibility === 'private'}
+                    onChange={() => setVisibility('private')}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      私有
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      仅自己可见
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* 文件名 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
                 文件名
               </label>
               <input
                 type="text"
-                id="fileName"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 text-sm"
                 placeholder="文件名，例如: hello.js"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+            {/* 代码编辑器 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
                 文件内容
               </label>
-              <div className="border border-gray-300 rounded-md overflow-hidden relative dark:border-gray-600">
+              <div className="code-container overflow-hidden">
                 <div className="h-96">
                   <MonacoEditor
                     height="100%"
                     language={getMonacoLanguage(language)}
                     value={fileContent}
-                    onChange={(value) => {
-                      setFileContent(value || '');
-                      console.log('Editor content changed:', value?.substring(0, 50)); // 调试日志
-                    }}
+                    onChange={(value) => setFileContent(value || '')}
                     theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light'}
                     options={{
-                      minimap: { enabled: true },
+                      minimap: { enabled: false },
                       fontSize: 14,
                       scrollBeyondLastLine: false,
                       automaticLayout: true,
                       wordWrap: 'on',
                       tabSize: 2,
                       insertSpaces: true,
+                      fontFamily: "Consolas, 'Liberation Mono', Menlo, monospace",
                     }}
                   />
                 </div>
               </div>
-              <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                检测到的语言: {getLanguageByValue(language).label} | 内容长度: {fileContent.length}
+              <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                语言: {getLanguageByValue(language).label} · 内容长度: {fileContent.length}
               </div>
             </div>
 
-            <div className="flex justify-between">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                } dark:focus:ring-offset-gray-800`}
-              >
-                {isSubmitting ? '更新中...' : '更新 Gist'}
-              </button>
+            {/* 按钮 */}
+            <div className="flex justify-end gap-3">
               <a
                 href={`/gists/${params.id}`}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 dark:focus:ring-offset-gray-800"
+                className="btn-outline px-4 py-2"
               >
                 取消
               </a>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary px-4 py-2"
+              >
+                {isSubmitting ? '更新中...' : '更新 Gist'}
+              </button>
             </div>
           </form>
         </div>

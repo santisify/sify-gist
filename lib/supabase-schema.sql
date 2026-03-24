@@ -16,9 +16,14 @@ CREATE TABLE gists (
     user_id TEXT,
     title TEXT,
     description TEXT,
+    visibility TEXT DEFAULT 'public' CHECK (visibility IN ('public', 'unlisted', 'private')),
+    forked_from TEXT,  -- Fork 来源 gist ID
+    stars_count INTEGER DEFAULT 0,  -- 收藏数
+    forks_count INTEGER DEFAULT 0,  -- Fork 数
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (forked_from) REFERENCES gists (id) ON DELETE SET NULL
 );
 
 -- 创建 gist_files 表
@@ -61,10 +66,23 @@ CREATE TABLE gist_stars (
     UNIQUE(user_id, gist_id)
 );
 
+-- 创建 gist_topics 表（用于标签功能）
+CREATE TABLE gist_topics (
+    id SERIAL PRIMARY KEY,
+    gist_id TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (gist_id) REFERENCES gists (id) ON DELETE CASCADE
+);
+
 -- 创建索引以提高查询性能
 CREATE INDEX idx_gists_user_id ON gists(user_id);
+CREATE INDEX idx_gists_forked_from ON gists(forked_from);
+CREATE INDEX idx_gists_visibility ON gists(visibility);
 CREATE INDEX idx_gist_files_gist_id ON gist_files(gist_id);
 CREATE INDEX idx_gist_versions_gist_id ON gist_versions(gist_id);
 CREATE INDEX idx_gist_file_versions_gist_version_id ON gist_file_versions(gist_version_id);
 CREATE INDEX idx_gist_stars_user_id ON gist_stars(user_id);
 CREATE INDEX idx_gist_stars_gist_id ON gist_stars(gist_id);
+CREATE INDEX idx_gist_topics_gist_id ON gist_topics(gist_id);
+CREATE INDEX idx_gist_topics_topic ON gist_topics(topic);

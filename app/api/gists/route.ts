@@ -1,6 +1,13 @@
 // app/api/gists/route.ts
 import { NextRequest } from 'next/server';
-import { getAllGists, createGist, getGistById, updateGist, deleteGist, CreateGistData } from '@/lib/gists';
+import { 
+  getAllGists, 
+  createGist, 
+  CreateGistData, 
+  searchGists,
+  getGistsByUser,
+  getGistsByTopic
+} from '@/lib/gists';
 import { initializeDatabase } from '@/app/init-db';
 
 async function ensureDbInitialized() {
@@ -16,21 +23,34 @@ export async function GET(request: NextRequest) {
   try {
     await ensureDbInitialized();
     
-    // 从查询参数获取用户ID
     const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const query = searchParams.get('q') || searchParams.get('query');
     const userId = searchParams.get('userId');
+    const currentUserId = searchParams.get('currentUserId');
+    const topic = searchParams.get('topic');
     
-    let gists;
-    if (userId) {
-      // 如果提供了用户ID，获取该用户创建的Gists
-      const { getGistsByUser } = await import('@/lib/gists');
-      gists = await getGistsByUser(userId);
+    let result;
+    
+    if (topic) {
+      // 按标签筛选
+      result = await getGistsByTopic(topic, { page, limit });
+    } else if (userId) {
+      // 获取指定用户的 Gists
+      result = await getGistsByUser(userId, currentUserId || undefined, { page, limit });
+    } else if (query) {
+      // 搜索模式
+      result = await searchGists(
+        { query, currentUserId: currentUserId || undefined },
+        { page, limit }
+      );
     } else {
-      // 否则，获取所有Gists
-      gists = await getAllGists();
+      // 获取所有公开 Gists
+      result = await getAllGists({ page, limit });
     }
     
-    return new Response(JSON.stringify(gists), {
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',

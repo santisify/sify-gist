@@ -1,4 +1,3 @@
-// app/login/page-client.tsx
 'use client';
 
 import { useState } from 'react';
@@ -41,82 +40,86 @@ export default function LoginPageClient() {
         router.refresh();
       } else {
         const data = await response.json();
-        setError(data.error || '登录失败');
+        setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('登录时发生错误，请稍后重试');
+      setError('An error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container-main py-16">
+    <div className="container-main py-12">
       <div className="max-w-sm mx-auto">
-        <div className="gist-card p-6">
-          <div className="text-center mb-6">
-            <div className="flex justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="w-12 h-12">
-                <rect x="2" y="2" width="28" height="28" rx="6" fill="var(--color-primary)" />
-                <path d="M11 10L6 16L11 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M21 10L26 16L21 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M18 8L14 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            </div>
-            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>登录到 Sify Gist</h1>
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="w-10 h-10">
+              <rect x="2" y="2" width="28" height="28" rx="6" fill="var(--color-primary)" />
+              <path d="M11 10L6 16L11 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 10L26 16L21 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M18 8L14 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <span className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>Sify Gist</span>
+          </Link>
+        </div>
+
+        {/* Login Card */}
+        <div className="card">
+          <div className="card-header">
+            <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>Sign in</h1>
           </div>
           
-          {error && (
-            <div className="mb-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
-              {error}
-            </div>
-          )}
+          <div className="card-body">
+            {error && (
+              <div className="alert alert-danger mb-4">
+                {error}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                邮箱
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm"
-                placeholder="your@email.com"
-              />
-            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="form-input"
+                  placeholder="you@example.com"
+                />
+              </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                密码
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm"
-                placeholder="••••••••"
-              />
-            </div>
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="form-input"
+                  placeholder="Enter your password"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full btn-primary py-2"
-            >
-              {isSubmitting ? '登录中...' : '登录'}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            <p>
-              还没有账户？{' '}
-              <Link href="/register" style={{ color: 'var(--color-primary)' }}>
-                立即注册
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary w-full py-2.5"
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+          </div>
+          
+          <div className="card-footer text-center">
+            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              New to Sify Gist?{' '}
+              <Link href="/register" style={{ color: 'var(--color-text-link)' }}>
+                Create an account
               </Link>
-            </p>
+            </span>
           </div>
         </div>
       </div>

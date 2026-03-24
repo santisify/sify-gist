@@ -44,6 +44,10 @@ export interface Database {
           user_id: string | null
           title: string | null
           description: string | null
+          visibility: string
+          forked_from: string | null
+          stars_count: number
+          forks_count: number
           created_at: string
           updated_at: string
         }
@@ -52,6 +56,10 @@ export interface Database {
           user_id?: string | null
           title?: string | null
           description?: string | null
+          visibility?: string
+          forked_from?: string | null
+          stars_count?: number
+          forks_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -60,6 +68,10 @@ export interface Database {
           user_id?: string | null
           title?: string | null
           description?: string | null
+          visibility?: string
+          forked_from?: string | null
+          stars_count?: number
+          forks_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -198,6 +210,35 @@ export interface Database {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      gist_topics: {
+        Row: {
+          id: number
+          gist_id: string
+          topic: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          gist_id: string
+          topic: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          gist_id?: string
+          topic?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gist_topics_gist_id_fkey"
+            columns: ["gist_id"]
+            isOneToOne: false
+            referencedRelation: "gists"
             referencedColumns: ["id"]
           }
         ]

@@ -1,14 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Gist } from '@/lib/gists';
+import { Gist, Visibility } from '@/lib/gists';
 import AvatarUpload from '@/components/AvatarUpload';
+import Pagination from '@/components/Pagination';
 
-export default function ProfilePage() {
-  const [userGists, setUserGists] = useState<Gist[]>([]);
+interface PaginatedResult {
+  data: Gist[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+function ProfileContent() {
+  const [userGists, setUserGists] = useState<PaginatedResult | null>(null);
   const [starredGists, setStarredGists] = useState<Gist[]>([]);
   const [activeTab, setActiveTab] = useState<'created' | 'starred'>('created');
   const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +32,20 @@ export default function ProfilePage() {
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
   
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const page = parseInt(searchParams?.get('page') || '1', 10);
+
+  const fetchUserGists = useCallback(async (userId: string) => {
+    try {
+      const response = await fetch(`/api/gists?userId=${userId}&currentUserId=${userId}&page=${page}&limit=10`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserGists(data);
+      }
+    } catch (error) {
+      console.error('获取用户 Gists 失败:', error);
+    }
+  }, [page]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -37,11 +60,7 @@ export default function ProfilePage() {
         const user = JSON.parse(storedUserInfo);
         setUserInfo(user);
 
-        const response = await fetch(`/api/gists?userId=${user.id}`);
-        if (response.ok) {
-          const gists = await response.json();
-          setUserGists(gists);
-        }
+        await fetchUserGists(user.id);
 
         const starredResponse = await fetch('/api/gists/starred', {
           headers: { 'user-id': user.id }
@@ -58,7 +77,7 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, [router]);
+  }, [router, fetchUserGists]);
 
   const openPasswordModal = () => {
     setShowPasswordModal(true);
@@ -138,15 +157,21 @@ export default function ProfilePage() {
     }
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (userInfo?.id) {
+        headers['X-User-Id'] = userInfo.id;
+      }
+      
       const response = await fetch(`/api/gists/${gistId}`, {
         method: 'DELETE',
+        headers,
       });
 
       if (response.ok) {
-        const response = await fetch(`/api/gists?userId=${userGists[0]?.user_id || userInfo?.id}`);
-        if (response.ok) {
-          const gists = await response.json();
-          setUserGists(gists);
+        if (userInfo?.id) {
+          await fetchUserGists(userInfo.id);
         }
       } else {
         alert('删除失败');
@@ -166,7 +191,28 @@ export default function ProfilePage() {
     localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
   };
 
-  const currentGists = activeTab === 'created' ? userGists : starredGists;
+  const handlePageChange = (newPage: number) => {
+    router.push(`/profile?page=${newPage}`);
+  };
+
+  function getVisibilityBadge(visibility: Visibility) {
+    switch (visibility) {
+      case 'private':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+            私有
+          </span>
+        );
+      case 'unlisted':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
+            未列出
+          </span>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <ProtectedRoute>
@@ -209,7 +255,7 @@ export default function ProfilePage() {
                   color: activeTab === 'created' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                 }}
               >
-                我创建的 ({userGists.length})
+                我创建的 ({userGists?.total || 0})
               </button>
               <button
                 onClick={() => setActiveTab('starred')}
@@ -230,26 +276,86 @@ export default function ProfilePage() {
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
                 <p className="mt-2" style={{ color: 'var(--color-text-secondary)' }}>加载中...</p>
               </div>
-            ) : currentGists.length === 0 ? (
-              <div className="text-center py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                  {activeTab === 'created' ? '还没有创建 Gist' : '还没有收藏 Gist'}
-                </h3>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {activeTab === 'created' ? '开始创建你的第一个代码片段' : '浏览并收藏你喜欢的代码片段'}
-                </p>
-                {activeTab === 'created' && (
+            ) : activeTab === 'created' ? (
+              userGists && userGists.data.length > 0 ? (
+                <div>
+                  <div className="gist-card border-0">
+                    {userGists.data.map((gist) => (
+                      <div key={gist.id} className="list-item">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            <Link 
+                              href={`/gists/${gist.id}`}
+                              className="font-medium truncate"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
+                              {gist.title || '未命名 Gist'}
+                            </Link>
+                            {getVisibilityBadge(gist.visibility)}
+                          </div>
+                          {gist.description && (
+                            <p className="text-sm mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                              {gist.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                            {gist.files.length} 文件
+                          </span>
+                          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                            {new Date(gist.created_at).toLocaleDateString('zh-CN')}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => router.push(`/gists/${gist.id}/edit`)}
+                              className="btn-sm"
+                            >
+                              编辑
+                            </button>
+                            <button
+                              onClick={() => handleDeleteGist(gist.id)}
+                              className="btn-danger px-2 py-1 text-xs"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {userGists.totalPages > 1 && (
+                    <Pagination
+                      currentPage={userGists.page}
+                      totalPages={userGists.totalPages}
+                      total={userGists.total}
+                      onPageChange={handlePageChange}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                    还没有创建 Gist
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    开始创建你的第一个代码片段
+                  </p>
                   <Link href="/create" className="btn-primary px-4 py-1.5 text-sm mt-4 inline-flex">
                     创建 Gist
                   </Link>
-                )}
-              </div>
-            ) : (
+                </div>
+              )
+            ) : starredGists.length > 0 ? (
               <div className="gist-card border-0">
-                {currentGists.map((gist) => (
+                {starredGists.map((gist) => (
                   <div key={gist.id} className="list-item">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -277,25 +383,21 @@ export default function ProfilePage() {
                       <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                         {new Date(gist.created_at).toLocaleDateString('zh-CN')}
                       </span>
-                      {activeTab === 'created' && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => router.push(`/gists/${gist.id}/edit`)}
-                            className="btn-sm"
-                          >
-                            编辑
-                          </button>
-                          <button
-                            onClick={() => handleDeleteGist(gist.id)}
-                            className="btn-danger px-2 py-1 text-xs"
-                          >
-                            删除
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                  还没有收藏 Gist
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  浏览并收藏你喜欢的代码片段
+                </p>
               </div>
             )}
           </div>
@@ -395,5 +497,19 @@ export default function ProfilePage() {
         </div>
       )}
     </ProtectedRoute>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="container-main py-6">
+        <div className="flex justify-center py-12">
+          <div className="loading-spinner"></div>
+        </div>
+      </div>
+    }>
+      <ProfileContent />
+    </Suspense>
   );
 }
