@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import GistDisplay from '../../../components/GistDisplay';
 import GistActions from '../../../components/GistActions';
-import GistVersions from '../../../components/GistVersions';
 import { Visibility } from '@/lib/gists';
 
 interface File {
@@ -44,7 +43,7 @@ export default function GistPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'code' | 'revisions' | 'forks'>('code');
+  const [activeTab, setActiveTab] = useState<'code' | 'forks'>('code');
   const [forksCount, setForksCount] = useState(0);
   const [forks, setForks] = useState<Gist[]>([]);
   const [forksLoading, setForksLoading] = useState(false);
@@ -75,9 +74,10 @@ export default function GistPageClient() {
         setLoading(true);
         setError(null);
         
+        const token = localStorage.getItem('userToken');
         const headers: HeadersInit = {};
-        if (userId) {
-          headers['X-User-Id'] = userId;
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
         }
         
         const response = await fetch(`/api/gists/${params.id}`, { headers });
@@ -137,7 +137,10 @@ export default function GistPageClient() {
   };
 
   function getTimeAgo(dateStr: string): string {
-    const date = new Date(dateStr);
+    // 数据库存储的是 UTC 时间，确保正确解析
+    // 如果时间字符串没有 Z 后缀，添加 Z 表示 UTC
+    const utcStr = dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`;
+    const date = new Date(utcStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -179,12 +182,14 @@ export default function GistPageClient() {
   async function deleteGist() {
     if (!gist || !confirm('Are you sure you want to delete this gist?')) return;
     
+    const token = localStorage.getItem('userToken');
+    
     try {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      if (userId) {
-        headers['X-User-Id'] = userId;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
       const response = await fetch(`/api/gists/${gist.id}`, {
@@ -387,15 +392,6 @@ export default function GistPageClient() {
           Code
         </button>
         <button 
-          onClick={() => setActiveTab('revisions')}
-          className={`tab ${activeTab === 'revisions' ? 'active' : ''}`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Revisions
-        </button>
-        <button 
           onClick={() => setActiveTab('forks')}
           className={`tab ${activeTab === 'forks' ? 'active' : ''}`}
         >
@@ -410,8 +406,6 @@ export default function GistPageClient() {
       {/* 内容 */}
       {activeTab === 'code' ? (
         <GistDisplay gist={gist} />
-      ) : activeTab === 'revisions' ? (
-        <GistVersions gistId={gist.id} />
       ) : (
         <div className="card">
           {forksLoading ? (

@@ -12,11 +12,11 @@ import { Visibility } from '@/lib/gists';
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-96 border border-gray-300 rounded-md flex items-center justify-center bg-gray-50">
+    <div className="w-full h-96 border rounded-md flex items-center justify-center" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-code)' }}>
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-2"></div>
-        <p>加载代码编辑器中...</p>
-        <p className="text-xs text-gray-500 mt-1">如果长时间加载，请刷新页面</p>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mb-3" style={{ borderColor: 'var(--color-primary)' }}></div>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>加载代码编辑器...</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>首次加载可能需要几秒钟</p>
       </div>
     </div>
   )
@@ -175,10 +175,13 @@ export default function EditGistPageClient() {
         return;
       }
       
+      const token = localStorage.getItem('userToken');
+      
       const response = await fetch(`/api/gists/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           title,

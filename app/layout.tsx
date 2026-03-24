@@ -1,11 +1,18 @@
-// app/layout.tsx
 import './styles/globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navbar from './navbar';
 import { ThemeProvider } from '@/lib/theme-context';
 
-const inter = Inter({ subsets: ['latin'] });
+// 优化字体加载：使用 display: swap 避免阻塞渲染
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  // 预加载字体
+  preload: true,
+  // 只加载需要的字重
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: 'Sify Gist - 代码片段分享平台',
@@ -13,6 +20,11 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
     apple: '/apple-touch-icon.svg',
+  },
+  // 预连接到 Google Fonts
+  other: {
+    'dns-prefetch': 'https://fonts.googleapis.com',
+    'preconnect': 'https://fonts.gstatic.com',
   },
 };
 
@@ -35,9 +47,7 @@ const themeScript = `
           document.documentElement.classList.remove('dark');
         }
       }
-    } catch (e) {
-      // 如果出现错误，什么都不做
-    }
+    } catch (e) {}
   })();
 `;
 
@@ -50,6 +60,9 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* 预连接到 Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={inter.className}>
         <ThemeProvider>

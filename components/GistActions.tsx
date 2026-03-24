@@ -21,7 +21,8 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
 
   useEffect(() => {
     const userInfo = localStorage.getItem('userInfo');
-    if (!userInfo) {
+    const token = localStorage.getItem('userToken');
+    if (!userInfo || !token) {
       setLoading(false);
       return;
     }
@@ -34,10 +35,10 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
         // 获取收藏状态
         const [starRes, forkRes] = await Promise.all([
           fetch(`/api/gists/${gistId}/star`, {
-            headers: { 'user-id': user.id }
+            headers: { 'Authorization': `Bearer ${token}` }
           }),
           fetch(`/api/gists/${gistId}/fork`, {
-            headers: { 'user-id': user.id }
+            headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
 
@@ -62,20 +63,18 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
   }, [gistId]);
 
   const handleStarToggle = async () => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (!userInfo) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
       window.location.href = `/login?redirect=/gists/${gistId}`;
       return;
     }
-
-    const user = JSON.parse(userInfo);
 
     try {
       if (isStarred) {
         const response = await fetch(`/api/gists/${gistId}/star`, {
           method: 'DELETE',
           headers: {
-            'user-id': user.id,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -87,7 +86,7 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
         const response = await fetch(`/api/gists/${gistId}/star`, {
           method: 'POST',
           headers: {
-            'user-id': user.id,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -102,16 +101,14 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
   };
 
   const handleFork = async () => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (!userInfo) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
       window.location.href = `/login?redirect=/gists/${gistId}`;
       return;
     }
 
-    const user = JSON.parse(userInfo);
-
     // 不能 fork 自己的 Gist
-    if (gistUserId === user.id) {
+    if (gistUserId === currentUserId) {
       alert('您不能 fork 自己的 Gist');
       return;
     }
@@ -127,7 +124,7 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
       const response = await fetch(`/api/gists/${gistId}/fork`, {
         method: 'POST',
         headers: {
-          'user-id': user.id,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });

@@ -27,10 +27,13 @@ export default function LoginPageClient() {
 
       if (response.ok) {
         const data = await response.json();
-        const { user, token } = data;
+        const { user, accessToken, refreshToken } = data;
         
-        if (token) {
-          localStorage.setItem('userToken', token);
+        if (accessToken) {
+          localStorage.setItem('userToken', accessToken);
+        }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
         }
         if (user) {
           localStorage.setItem('userInfo', JSON.stringify(user));

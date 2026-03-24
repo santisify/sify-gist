@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forkGist, hasUserForked } from '@/lib/gists';
+import { getUserIdFromRequest } from '@/lib/jwt';
 
 // 检查是否已 fork
 export async function GET(
@@ -8,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const userId = request.headers.get('x-user-id');
+    const userId = getUserIdFromRequest(request);
 
     if (!userId) {
       return NextResponse.json({ hasForked: false, forkId: null });
@@ -36,7 +37,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const userId = request.headers.get('x-user-id');
+    const userId = getUserIdFromRequest(request);
 
     if (!userId) {
       return NextResponse.json(

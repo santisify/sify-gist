@@ -1,54 +1,45 @@
-// app/api/auth/check/route.ts
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken, getUserFromRequest } from '@/lib/jwt';
+import { getUserById } from '@/lib/auth';
 
-// 修复Next.js构建错误
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // 在实际应用中，这里会验证 JWT token
-    // 为了简单起见，我们只检查 token 是否存在且格式正确
-    const authHeader = request.headers.get('Authorization');
+    const payload = getUserFromRequest(request);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: '缺少认证令牌' }), {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    if (!payload) {
+      return NextResponse.json(
+        { error: '无效或过期的认证令牌', authenticated: false },
+        { status: 401 }
+      );
     }
+
+    // 获取最新的用户信息
+    const user = await getUserById(payload.userId);
     
-    const token = authHeader.substring(7); // 移除 "Bearer " 前缀
-    
-    // 在实际应用中，这里应该验证 token 的有效性
-    // 例如解码 JWT 并检查其签名和过期时间
-    if (!token || token.length < 10) { // 简单验证
-      return new Response(JSON.stringify({ error: '无效的认证令牌' }), {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    if (!user) {
+      return NextResponse.json(
+        { error: '用户不存在', authenticated: false },
+        { status: 401 }
+      );
     }
-    
-    // 如果 token 有效，返回用户信息
-    return new Response(JSON.stringify({ 
+
+    return NextResponse.json({
       authenticated: true,
-      message: '认证成功'
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar_url: user.avatar_url,
       },
+      message: '认证成功',
     });
   } catch (error) {
     console.error('认证检查错误:', error);
-    return new Response(JSON.stringify({ error: '认证检查失败' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return NextResponse.json(
+      { error: '认证检查失败', authenticated: false },
+      { status: 500 }
+    );
   }
 }

@@ -40,7 +40,21 @@ export default function RegisterPageClient() {
       });
 
       if (response.ok) {
-        router.push(redirect);
+        const data = await response.json();
+        const { user, accessToken, refreshToken } = data;
+        
+        if (accessToken) {
+          localStorage.setItem('userToken', accessToken);
+        }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        if (user) {
+          localStorage.setItem('userInfo', JSON.stringify(user));
+        }
+        
+        router.push('/');
+        router.refresh();
       } else {
         const data = await response.json();
         setError(data.error || 'Registration failed');

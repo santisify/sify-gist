@@ -1,36 +1,32 @@
-// app/api/gists/[id]/star/route.ts
 import { NextRequest } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 import { getGistById } from '@/lib/gists';
+import { getUserIdFromRequest } from '@/lib/jwt';
 
-// 修复Next.js构建错误
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const gistId = params.id;
+    const userId = getUserIdFromRequest(request);
     
-    // 从请求头获取用户信息（实际项目中可能需要验证token）
-    const userId = request.headers.get('user-id');
     if (!userId) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+      return Response.json({ error: '请先登录' }, { status: 401 });
     }
     
     const supabase = getSupabaseClient();
     
-    // 检查Gist是否存在
     const gist = await getGistById(gistId);
     if (!gist) {
       return Response.json({ error: 'Gist不存在' }, { status: 404 });
     }
     
-    // 添加收藏记录
     const { data, error } = await supabase
       .from('gist_stars')
       .insert([{ user_id: userId, gist_id: gistId }]);
     
     if (error) {
-      if (error.code === '23505') { // PostgreSQL unique violation code
+      if (error.code === '23505') {
         return Response.json({ error: '已经收藏过此Gist' }, { status: 400 });
       }
       console.error('收藏Gist时出错:', error);
@@ -47,16 +43,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const gistId = params.id;
+    const userId = getUserIdFromRequest(request);
     
-    // 从请求头获取用户信息
-    const userId = request.headers.get('user-id');
     if (!userId) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+      return Response.json({ error: '请先登录' }, { status: 401 });
     }
     
     const supabase = getSupabaseClient();
     
-    // 删除收藏记录
     const { data, error } = await supabase
       .from('gist_stars')
       .delete()
@@ -81,16 +75,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const gistId = params.id;
+    const userId = getUserIdFromRequest(request);
     
-    // 从请求头获取用户信息
-    const userId = request.headers.get('user-id');
     if (!userId) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+      return Response.json({ isStarred: false }, { status: 200 });
     }
     
     const supabase = getSupabaseClient();
     
-    // 检查是否已收藏
     const { data, error } = await supabase
       .from('gist_stars')
       .select('*')

@@ -1,6 +1,6 @@
-// app/api/auth/register/route.ts
 import { NextRequest } from 'next/server';
 import { registerUser, getUserByEmail } from '@/lib/auth';
+import { generateTokenPair } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 检查邮箱是否已存在
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return new Response(JSON.stringify({ error: '该邮箱已被注册' }), {
@@ -26,7 +25,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 密码长度验证
     if (password.length < 6) {
       return new Response(JSON.stringify({ error: '密码长度不能少于6位' }), {
         status: 400,
@@ -47,6 +45,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 生成 JWT token
+    const tokens = generateTokenPair({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+
     return new Response(JSON.stringify({ 
       user: {
         id: user.id,
@@ -54,6 +59,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         avatar_url: user.avatar_url
       },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
       message: '注册成功'
     }), {
       status: 201,

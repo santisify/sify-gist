@@ -1,7 +1,6 @@
-// app/api/auth/login/route.ts
 import { NextRequest } from 'next/server';
 import { authenticateUser } from '@/lib/auth';
-import { nanoid } from 'nanoid';
+import { generateTokenPair } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,8 +26,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 生成一个简单的 token（在实际应用中应使用 JWT）
-    const token = `token_${nanoid(32)}`;
+    // 使用 JWT 生成令牌对
+    const tokens = generateTokenPair({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
     
     return new Response(JSON.stringify({ 
       user: {
@@ -37,7 +40,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         avatar_url: user.avatar_url
       },
-      token: token,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
       message: '登录成功'
     }), {
       status: 200,

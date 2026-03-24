@@ -127,7 +127,10 @@ export default function HomePageClient() {
   };
 
   function getTimeAgo(dateStr: string): string {
-    const date = new Date(dateStr);
+    // 数据库存储的是 UTC 时间，确保正确解析
+    // 如果时间字符串没有 Z 后缀，添加 Z 表示 UTC
+    const utcStr = dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`;
+    const date = new Date(utcStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);

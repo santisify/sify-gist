@@ -166,7 +166,7 @@ CREATE INDEX idx_gist_topics_topic ON gist_topics(topic);
 
 1. 克隆项目:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/santisify/sify-gist.git
 cd sify-gist
 ```
 

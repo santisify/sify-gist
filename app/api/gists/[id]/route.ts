@@ -1,6 +1,6 @@
-// app/api/gists/[id]/route.ts
 import { NextRequest } from 'next/server';
 import { getGistById, updateGist, deleteGist, CreateGistData } from '@/lib/gists';
+import { getUserIdFromRequest } from '@/lib/jwt';
 import { initializeDatabase } from '@/app/init-db';
 
 async function ensureDbInitialized() {
@@ -31,13 +31,7 @@ export async function GET(
     
     // 可见性检查
     if (gist.visibility === 'private') {
-      // 从请求头获取当前用户信息
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.replace('Bearer ', '');
-      
-      // 简单验证：私有 Gist 只有创建者可以访问
-      // 在实际应用中，这里应该使用 JWT 验证
-      const currentUserId = request.headers.get('X-User-Id');
+      const currentUserId = getUserIdFromRequest(request);
       
       if (!currentUserId || currentUserId !== gist.user_id) {
         return new Response(JSON.stringify({ error: '没有权限访问此 Gist' }), {
@@ -48,8 +42,6 @@ export async function GET(
         });
       }
     }
-    
-    // public 和 unlisted 都可以访问（unlisted 需要知道链接）
     
     return new Response(JSON.stringify(gist), {
       status: 200,
@@ -75,7 +67,6 @@ export async function PUT(
   try {
     await ensureDbInitialized();
     
-    // 先获取 gist 检查权限
     const existingGist = await getGistById(params.id);
     if (!existingGist) {
       return new Response(JSON.stringify({ error: 'Gist 不存在' }), {
@@ -86,9 +77,18 @@ export async function PUT(
       });
     }
     
-    // 权限检查：只有创建者可以更新
-    const currentUserId = request.headers.get('X-User-Id');
-    if (!currentUserId || currentUserId !== existingGist.user_id) {
+    // 使用 JWT 进行权限验证
+    const currentUserId = getUserIdFromRequest(request);
+    if (!currentUserId) {
+      return new Response(JSON.stringify({ error: '请先登录' }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+    
+    if (currentUserId !== existingGist.user_id) {
       return new Response(JSON.stringify({ error: '没有权限更新此 Gist' }), {
         status: 403,
         headers: {
@@ -124,7 +124,6 @@ export async function DELETE(
   try {
     await ensureDbInitialized();
     
-    // 先获取 gist 检查权限
     const existingGist = await getGistById(params.id);
     if (!existingGist) {
       return new Response(JSON.stringify({ error: 'Gist 不存在' }), {
@@ -135,9 +134,18 @@ export async function DELETE(
       });
     }
     
-    // 权限检查：只有创建者可以删除
-    const currentUserId = request.headers.get('X-User-Id');
-    if (!currentUserId || currentUserId !== existingGist.user_id) {
+    // 使用 JWT 进行权限验证
+    const currentUserId = getUserIdFromRequest(request);
+    if (!currentUserId) {
+      return new Response(JSON.stringify({ error: '请先登录' }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+    
+    if (currentUserId !== existingGist.user_id) {
       return new Response(JSON.stringify({ error: '没有权限删除此 Gist' }), {
         status: 403,
         headers: {
@@ -146,7 +154,7 @@ export async function DELETE(
       });
     }
     
-    const deleted = await deleteGist(params.id);
+    await deleteGist(params.id);
     
     return new Response(JSON.stringify({ message: 'Gist 已删除' }), {
       status: 200,

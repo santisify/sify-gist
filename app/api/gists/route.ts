@@ -1,4 +1,3 @@
-// app/api/gists/route.ts
 import { NextRequest } from 'next/server';
 import { 
   getAllGists, 
@@ -8,6 +7,7 @@ import {
   getGistsByUser,
   getGistsByTopic
 } from '@/lib/gists';
+import { getUserIdFromRequest } from '@/lib/jwt';
 import { initializeDatabase } from '@/app/init-db';
 
 async function ensureDbInitialized() {
@@ -28,26 +28,24 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const query = searchParams.get('q') || searchParams.get('query');
     const userId = searchParams.get('userId');
-    const currentUserId = searchParams.get('currentUserId');
     const topic = searchParams.get('topic');
+    
+    // 从 JWT 获取当前用户 ID
+    const currentUserId = getUserIdFromRequest(request);
     
     let result;
     
     if (topic) {
-      // 按标签筛选
       result = await getGistsByTopic(topic, { page, limit });
     } else if (userId) {
-      // 获取指定用户的 Gists
       result = await getGistsByUser(userId, currentUserId || undefined, { page, limit });
     } else if (query) {
-      // 搜索模式
       result = await searchGists(
         { query, currentUserId: currentUserId || undefined },
         { page, limit }
       );
     } else {
-      // 获取所有公开 Gists
-      result = await getAllGists({ page, limit });
+      result = await getAllGists({ page, limit }, { currentUserId: currentUserId || undefined });
     }
     
     return new Response(JSON.stringify(result), {
@@ -70,7 +68,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await ensureDbInitialized();
+    
+    // 从 JWT 获取用户 ID
+    const userId = getUserIdFromRequest(request);
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: '请先登录' }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+    
     const data: CreateGistData = await request.json();
+    data.user_id = userId;
+    
     const newGist = await createGist(data);
     
     return new Response(JSON.stringify(newGist), {

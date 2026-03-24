@@ -8,13 +8,15 @@ import { getMonacoLanguage, getLanguageByValue } from '@/lib/language-support';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Visibility } from '@/lib/gists';
 
+// Monaco Editor 配置优化
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-96 flex items-center justify-center code-container">
+    <div className="w-full h-96 flex items-center justify-center border rounded-md" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-code)' }}>
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
-        <p className="mt-2" style={{ color: 'var(--color-text-secondary)' }}>加载编辑器...</p>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mb-3" style={{ borderColor: 'var(--color-primary)' }}></div>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>加载代码编辑器...</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>首次加载可能需要几秒钟</p>
       </div>
     </div>
   )
@@ -150,10 +152,13 @@ export default function CreateGistPage() {
         return;
       }
       
+      const token = localStorage.getItem('userToken');
+      
       const response = await fetch('/api/gists', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           title,
@@ -164,7 +169,6 @@ export default function CreateGistPage() {
             content: currentFileContent,
             language
           }],
-          user_id: userId,
           topics
         })
       });
