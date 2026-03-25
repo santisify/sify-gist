@@ -5,10 +5,10 @@ import { getUserIdFromRequest } from '@/lib/jwt';
 // 检查是否已 fork
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const userId = getUserIdFromRequest(request);
 
     if (!userId) {
@@ -33,10 +33,10 @@ export async function GET(
 // Fork 一个 Gist
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const userId = getUserIdFromRequest(request);
 
     if (!userId) {
