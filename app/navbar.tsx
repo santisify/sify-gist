@@ -30,9 +30,18 @@ export default function Navbar() {
         console.error('解析用户信息失败:', e);
         localStorage.removeItem('userToken');
         localStorage.removeItem('userInfo');
+        localStorage.removeItem('refreshToken');
+        setIsAuthenticated(false);
       }
+    } else {
+      setIsAuthenticated(false);
+      setUserName('');
+      setUserEmail('');
+      setUserAvatar(null);
     }
+  }, [pathname]);
 
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
