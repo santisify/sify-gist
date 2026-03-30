@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+
+type EmbedTheme = 'auto' | 'light' | 'dark';
 
 interface GistActionsProps {
   gistId: string;
@@ -18,6 +19,8 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
   const [forkId, setForkId] = useState<string | null>(null);
   const [forking, setForking] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('auto');
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const userInfo = localStorage.getItem('userInfo');
@@ -147,7 +150,86 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
     }
   };
 
-  const embedCode = `<div id="sify-gist-${gistId}"></div>\n<script src="${typeof window !== 'undefined' ? window.location.origin : ''}/api/gists/${gistId}/embed.js"></script>`;
+  // 生成 embed 代码
+  const getEmbedCode = (theme: EmbedTheme) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const themeParam = theme === 'auto' ? '' : `?theme=${theme}`;
+    return `<div id="sify-gist-${gistId}"></div>\n<script src="${origin}/api/gists/${gistId}/embed.js${themeParam}"></script>`;
+  };
+
+  const embedCode = getEmbedCode(embedTheme);
+
+  // 渲染预览
+  useEffect(() => {
+    if (showEmbed && previewRef.current) {
+      // 清空预览容器
+      previewRef.current.innerHTML = '';
+      
+      // 创建 gist 容器
+      const container = document.createElement('div');
+      container.id = `sify-gist-${gistId}-preview`;
+      previewRef.current.appendChild(container);
+      
+      // 创建并加载脚本
+      const origin = window.location.origin;
+      const themeParam = embedTheme === 'auto' ? '' : `?theme=${embedTheme}`;
+      const script = document.createElement('script');
+      script.src = `${origin}/api/gists/${gistId}/embed.js${themeParam}`;
+      script.onload = () => {
+        // 脚本加载后，查找渲染的内容并移动到预览容器
+        const renderedGist = document.querySelector('.sify-gist-container');
+        if (renderedGist && previewRef.current) {
+          // 如果不是在预览容器内，移动进去
+          if (!previewRef.current.contains(renderedGist)) {
+            previewRef.current.innerHTML = '';
+            previewRef.current.appendChild(renderedGist.cloneNode(true));
+            renderedGist.remove();
+          }
+        }
+      };
+      
+      // 使用 setTimeout 确保容器已准备好
+      setTimeout(() => {
+        document.body.appendChild(script);
+      }, 100);
+      
+      // 清理函数
+      return () => {
+        // 移除可能残留的 embed 内容
+        const existingGist = document.querySelector('.sify-gist-container');
+        if (existingGist && !previewRef.current?.contains(existingGist)) {
+          existingGist.remove();
+        }
+      };
+    }
+  }, [showEmbed, embedTheme, gistId]);
+
+  // 切换主题时重新加载预览
+  useEffect(() => {
+    if (showEmbed && previewRef.current) {
+      // 清空并重新渲染
+      previewRef.current.innerHTML = '<div class="text-gray-500 italic text-sm p-4">Loading preview...</div>';
+      
+      // 移除旧的 embed 内容
+      const existingGist = document.querySelector('.sify-gist-container');
+      if (existingGist) {
+        existingGist.remove();
+      }
+      
+      // 创建新容器
+      const container = document.createElement('div');
+      container.id = `sify-gist-${gistId}-preview`;
+      previewRef.current.innerHTML = '';
+      previewRef.current.appendChild(container);
+      
+      // 加载脚本
+      const origin = window.location.origin;
+      const themeParam = embedTheme === 'auto' ? '' : `?theme=${embedTheme}`;
+      const script = document.createElement('script');
+      script.src = `${origin}/api/gists/${gistId}/embed.js${themeParam}`;
+      document.body.appendChild(script);
+    }
+  }, [embedTheme]);
 
   return (
     <>
@@ -191,8 +273,8 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
       {/* Embed Modal */}
       {showEmbed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="card w-full max-w-lg">
-            <div className="card-header flex items-center justify-between">
+          <div className="card w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="card-header flex items-center justify-between flex-shrink-0">
               <h3 className="font-semibold">Embed this gist</h3>
               <button onClick={() => setShowEmbed(false)} className="btn btn-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -200,10 +282,50 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
                 </svg>
               </button>
             </div>
-            <div className="card-body space-y-4">
+            <div className="card-body space-y-4 overflow-y-auto flex-1">
+              <div>
+                <label className="form-label text-sm font-medium">Theme</label>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => setEmbedTheme('auto')}
+                    className={`btn btn-sm ${embedTheme === 'auto' ? 'btn-primary' : ''}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Auto
+                  </button>
+                  <button
+                    onClick={() => setEmbedTheme('light')}
+                    className={`btn btn-sm ${embedTheme === 'light' ? 'btn-primary' : ''}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Light
+                  </button>
+                  <button
+                    onClick={() => setEmbedTheme('dark')}
+                    className={`btn btn-sm ${embedTheme === 'dark' ? 'btn-primary' : ''}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    Dark
+                  </button>
+                </div>
+                <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                  {embedTheme === 'auto' 
+                    ? 'Auto: Follows the system theme preference (prefers-color-scheme)' 
+                    : embedTheme === 'light' 
+                      ? 'Light: Always use light theme' 
+                      : 'Dark: Always use dark theme'}
+                </p>
+              </div>
+              
               <div>
                 <label className="form-label text-sm font-medium">Embed code</label>
-                <p className="text-xs text-gray-500 mb-2">Copy this code and paste it into your HTML to embed this gist.</p>
+                <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>Copy this code and paste it into your HTML to embed this gist.</p>
                 <textarea 
                   readOnly 
                   value={embedCode}
@@ -212,25 +334,32 @@ export default function GistActions({ gistId, gistUserId, starsCount = 0, forksC
                   onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                 />
               </div>
+              
               <div>
                 <label className="form-label text-sm font-medium">Preview</label>
-                <p className="text-xs text-gray-500 mb-2">This is how your embedded gist will look.</p>
+                <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>This is how your embedded gist will look.</p>
                 <div 
-                  id={`sify-gist-${gistId}-preview`}
-                  className="border rounded p-4 bg-gray-50 text-sm"
+                  ref={previewRef}
+                  className="border rounded overflow-auto max-h-80"
+                  style={{ 
+                    borderColor: 'var(--color-border)',
+                    backgroundColor: embedTheme === 'dark' ? '#0d1117' : embedTheme === 'light' ? '#ffffff' : undefined
+                  }}
                 >
-                  <div className="text-gray-500 italic">Preview will appear when the embed script loads.</div>
+                  <div className="p-4 text-sm italic" style={{ color: 'var(--color-text-muted)' }}>Loading preview...</div>
                 </div>
               </div>
             </div>
-            <div className="card-footer flex justify-end gap-2">
+            <div className="card-footer flex justify-end gap-2 flex-shrink-0">
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(embedCode);
-                  alert('Copied to clipboard!');
                 }}
                 className="btn btn-primary btn-sm"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
                 Copy Embed Code
               </button>
             </div>

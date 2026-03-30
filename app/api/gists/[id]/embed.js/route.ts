@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGistById, getGistTopics } from '@/lib/gists';
+import Prism from 'prismjs';
+import 'prismjs/components/index';
+
+// 语言映射表
+const languageMap: Record<string, string> = {
+  'js': 'javascript',
+  'ts': 'typescript',
+  'py': 'python',
+  'rb': 'ruby',
+  'sh': 'bash',
+  'shell': 'bash',
+  'yml': 'yaml',
+  'md': 'markdown',
+  'htm': 'html',
+  'vue': 'markup',
+  'svelte': 'markup',
+};
 
 // 生成可嵌入的 JavaScript 代码
 export async function GET(
@@ -24,14 +41,14 @@ export async function GET(
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const baseUrl = `${protocol}://${origin}`;
 
-    // 生成 HTML 内容
+    // 生成 HTML 内容（使用语法高亮）
     const filesHtml = gist.files.map(file => `
       <div class="sify-gist-file">
         <div class="sify-gist-file-header">
           <span class="sify-gist-filename">${escapeHtml(file.filename)}</span>
           <a class="sify-gist-raw-link" href="${baseUrl}/api/gists/${id}/raw/${encodeURIComponent(file.filename)}" target="_blank">view raw</a>
         </div>
-        <pre class="sify-gist-code"><code class="language-${file.language}">${escapeHtml(file.content)}</code></pre>
+        <div class="sify-gist-code">${generateCodeHtml(file.content, file.language)}</div>
       </div>
     `).join('');
 
@@ -43,14 +60,25 @@ export async function GET(
       ? `<div class="sify-gist-description">${escapeHtml(gist.description)}</div>` 
       : '';
 
+    // 获取主题参数
+    const url = new URL(request.url);
+    const themeParam = url.searchParams.get('theme');
+
     // 生成 JavaScript 代码
     const jsCode = `
 (function() {
+  // 获取脚本 URL 中的主题参数
+  var currentScript = document.currentScript;
+  var scriptSrc = currentScript ? currentScript.src : '';
+  var themeMatch = scriptSrc && scriptSrc.match(/[?&]theme=(light|dark)/);
+  var forcedTheme = themeMatch ? themeMatch[1] : null;
+  
   var container = document.currentScript.parentElement;
   var gistContainer = document.createElement('div');
-  gistContainer.className = 'sify-gist-container';
+  gistContainer.className = 'sify-gist-container' + (forcedTheme ? ' sify-gist-theme-' + forcedTheme : '');
   gistContainer.innerHTML = \`
     <style>
+      /* Light theme (default) */
       .sify-gist-container {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
         font-size: 14px;
@@ -146,16 +174,67 @@ export async function GET(
       }
       .sify-gist-code {
         margin: 0;
-        padding: 16px;
+        padding: 0;
         overflow-x: auto;
         background-color: #ffffff;
       }
-      .sify-gist-code code {
+      .sify-gist-code-table {
+        width: 100%;
+        border-collapse: collapse;
         font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
         font-size: 13px;
         line-height: 1.6;
-        white-space: pre;
+        margin: 0;
       }
+      .sify-gist-line {
+        height: 20px;
+      }
+      .sify-gist-line-num {
+        padding: 0 12px;
+        text-align: right;
+        color: #6e7681;
+        user-select: none;
+        background-color: #f6f8fa;
+        border-right: 1px solid #d0d7de;
+        vertical-align: top;
+      }
+      .sify-gist-line-code {
+        padding: 0 16px;
+        white-space: pre;
+        vertical-align: top;
+      }
+      /* Prism.js 主题 - 浅色 */
+      .sify-gist-code .token.comment,
+      .sify-gist-code .token.prolog,
+      .sify-gist-code .token.doctype,
+      .sify-gist-code .token.cdata { color: #6a737d; }
+      .sify-gist-code .token.punctuation { color: #24292f; }
+      .sify-gist-code .token.property,
+      .sify-gist-code .token.tag,
+      .sify-gist-code .token.boolean,
+      .sify-gist-code .token.number,
+      .sify-gist-code .token.constant,
+      .sify-gist-code .token.symbol,
+      .sify-gist-code .token.deleted { color: #005cc5; }
+      .sify-gist-code .token.selector,
+      .sify-gist-code .token.attr-name,
+      .sify-gist-code .token.string,
+      .sify-gist-code .token.char,
+      .sify-gist-code .token.builtin,
+      .sify-gist-code .token.inserted { color: #22863a; }
+      .sify-gist-code .token.operator,
+      .sify-gist-code .token.entity,
+      .sify-gist-code .token.url,
+      .sify-gist-code .language-css .token.string,
+      .sify-gist-code .style .token.string { color: #d73a49; }
+      .sify-gist-code .token.atrule,
+      .sify-gist-code .token.attr-value,
+      .sify-gist-code .token.keyword { color: #d73a49; }
+      .sify-gist-code .token.function,
+      .sify-gist-code .token.class-name { color: #6f42c1; }
+      .sify-gist-code .token.regex,
+      .sify-gist-code .token.important,
+      .sify-gist-code .token.variable { color: #e36209; }
       .sify-gist-footer {
         padding: 8px 16px;
         background-color: #f6f8fa;
@@ -172,6 +251,314 @@ export async function GET(
       }
       .sify-gist-footer a:hover {
         color: #0969da;
+      }
+
+      /* Dark theme - 自动检测系统偏好 */
+      @media (prefers-color-scheme: dark) {
+        .sify-gist-container:not(.sify-gist-theme-light) {
+          color: #c9d1d9;
+          background-color: #0d1117;
+          border-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-header {
+          background-color: #161b22;
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-title {
+          color: #58a6ff;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-meta {
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-user {
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-user:hover {
+          color: #58a6ff;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-description {
+          color: #8b949e;
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topics {
+          background-color: #161b22;
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topic {
+          color: #58a6ff;
+          background-color: #1f3a5f;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-file {
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-file-header {
+          background-color: #161b22;
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-filename {
+          color: #c9d1d9;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-raw-link {
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-raw-link:hover {
+          color: #58a6ff;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-code {
+          background-color: #0d1117;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-line-num {
+          color: #484f58;
+          background-color: #161b22;
+          border-right-color: #30363d;
+        }
+        /* Prism.js 主题 - 暗色 */
+        .sify-gist-container:not(.sify-gist-theme-light) .token.comment,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.prolog,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.doctype,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.cdata { color: #8b949e; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.punctuation { color: #c9d1d9; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.property,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.tag,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.boolean,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.number,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.constant,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.symbol,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.deleted { color: #79c0ff; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.selector,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.attr-name,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.string,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.char,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.builtin,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.inserted { color: #7ee787; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.operator,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.entity,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.url,
+        .sify-gist-container:not(.sify-gist-theme-light) .language-css .token.string,
+        .sify-gist-container:not(.sify-gist-theme-light) .style .token.string { color: #ff7b72; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.atrule,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.attr-value,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.keyword { color: #ff7b72; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.function,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.class-name { color: #d2a8ff; }
+        .sify-gist-container:not(.sify-gist-theme-light) .token.regex,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.important,
+        .sify-gist-container:not(.sify-gist-theme-light) .token.variable { color: #ffa657; }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer {
+          background-color: #161b22;
+          border-top-color: #30363d;
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer a {
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer a:hover {
+          color: #58a6ff;
+        }
+      }
+
+      /* 强制暗色主题 */
+      .sify-gist-theme-dark {
+        color: #c9d1d9 !important;
+        background-color: #0d1117 !important;
+        border-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-header {
+        background-color: #161b22 !important;
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-title {
+        color: #58a6ff !important;
+      }
+      .sify-gist-theme-dark .sify-gist-meta {
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-user {
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-user:hover {
+        color: #58a6ff !important;
+      }
+      .sify-gist-theme-dark .sify-gist-description {
+        color: #8b949e !important;
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-topics {
+        background-color: #161b22 !important;
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-topic {
+        color: #58a6ff !important;
+        background-color: #1f3a5f !important;
+      }
+      .sify-gist-theme-dark .sify-gist-file {
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-file-header {
+        background-color: #161b22 !important;
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-filename {
+        color: #c9d1d9 !important;
+      }
+      .sify-gist-theme-dark .sify-gist-raw-link {
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-raw-link:hover {
+        color: #58a6ff !important;
+      }
+      .sify-gist-theme-dark .sify-gist-code {
+        background-color: #0d1117 !important;
+      }
+      .sify-gist-theme-dark .sify-gist-line-num {
+        color: #484f58 !important;
+        background-color: #161b22 !important;
+        border-right-color: #30363d !important;
+      }
+      /* Prism.js 主题 - 强制暗色 */
+      .sify-gist-theme-dark .token.comment,
+      .sify-gist-theme-dark .token.prolog,
+      .sify-gist-theme-dark .token.doctype,
+      .sify-gist-theme-dark .token.cdata { color: #8b949e !important; }
+      .sify-gist-theme-dark .token.punctuation { color: #c9d1d9 !important; }
+      .sify-gist-theme-dark .token.property,
+      .sify-gist-theme-dark .token.tag,
+      .sify-gist-theme-dark .token.boolean,
+      .sify-gist-theme-dark .token.number,
+      .sify-gist-theme-dark .token.constant,
+      .sify-gist-theme-dark .token.symbol,
+      .sify-gist-theme-dark .token.deleted { color: #79c0ff !important; }
+      .sify-gist-theme-dark .token.selector,
+      .sify-gist-theme-dark .token.attr-name,
+      .sify-gist-theme-dark .token.string,
+      .sify-gist-theme-dark .token.char,
+      .sify-gist-theme-dark .token.builtin,
+      .sify-gist-theme-dark .token.inserted { color: #7ee787 !important; }
+      .sify-gist-theme-dark .token.operator,
+      .sify-gist-theme-dark .token.entity,
+      .sify-gist-theme-dark .token.url,
+      .sify-gist-theme-dark .language-css .token.string,
+      .sify-gist-theme-dark .style .token.string { color: #ff7b72 !important; }
+      .sify-gist-theme-dark .token.atrule,
+      .sify-gist-theme-dark .token.attr-value,
+      .sify-gist-theme-dark .token.keyword { color: #ff7b72 !important; }
+      .sify-gist-theme-dark .token.function,
+      .sify-gist-theme-dark .token.class-name { color: #d2a8ff !important; }
+      .sify-gist-theme-dark .token.regex,
+      .sify-gist-theme-dark .token.important,
+      .sify-gist-theme-dark .token.variable { color: #ffa657 !important; }
+      .sify-gist-theme-dark .sify-gist-footer {
+        background-color: #161b22 !important;
+        border-top-color: #30363d !important;
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-footer a {
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-footer a:hover {
+        color: #58a6ff !important;
+      }
+
+      /* 强制浅色主题 */
+      .sify-gist-theme-light {
+        color: #24292f !important;
+        background-color: #ffffff !important;
+        border-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-header {
+        background-color: #f6f8fa !important;
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-title {
+        color: #0969da !important;
+      }
+      .sify-gist-theme-light .sify-gist-meta {
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-user {
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-user:hover {
+        color: #0969da !important;
+      }
+      .sify-gist-theme-light .sify-gist-description {
+        color: #57606a !important;
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-topics {
+        background-color: #f6f8fa !important;
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-topic {
+        color: #0969da !important;
+        background-color: #ddf4ff !important;
+      }
+      .sify-gist-theme-light .sify-gist-file {
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-file-header {
+        background-color: #f6f8fa !important;
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-filename {
+        color: #24292f !important;
+      }
+      .sify-gist-theme-light .sify-gist-raw-link {
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-raw-link:hover {
+        color: #0969da !important;
+      }
+      .sify-gist-theme-light .sify-gist-code {
+        background-color: #ffffff !important;
+      }
+      .sify-gist-theme-light .sify-gist-line-num {
+        color: #6e7681 !important;
+        background-color: #f6f8fa !important;
+        border-right-color: #d0d7de !important;
+      }
+      /* Prism.js 主题 - 强制浅色 */
+      .sify-gist-theme-light .token.comment,
+      .sify-gist-theme-light .token.prolog,
+      .sify-gist-theme-light .token.doctype,
+      .sify-gist-theme-light .token.cdata { color: #6a737d !important; }
+      .sify-gist-theme-light .token.punctuation { color: #24292f !important; }
+      .sify-gist-theme-light .token.property,
+      .sify-gist-theme-light .token.tag,
+      .sify-gist-theme-light .token.boolean,
+      .sify-gist-theme-light .token.number,
+      .sify-gist-theme-light .token.constant,
+      .sify-gist-theme-light .token.symbol,
+      .sify-gist-theme-light .token.deleted { color: #005cc5 !important; }
+      .sify-gist-theme-light .token.selector,
+      .sify-gist-theme-light .token.attr-name,
+      .sify-gist-theme-light .token.string,
+      .sify-gist-theme-light .token.char,
+      .sify-gist-theme-light .token.builtin,
+      .sify-gist-theme-light .token.inserted { color: #22863a !important; }
+      .sify-gist-theme-light .token.operator,
+      .sify-gist-theme-light .token.entity,
+      .sify-gist-theme-light .token.url,
+      .sify-gist-theme-light .language-css .token.string,
+      .sify-gist-theme-light .style .token.string { color: #d73a49 !important; }
+      .sify-gist-theme-light .token.atrule,
+      .sify-gist-theme-light .token.attr-value,
+      .sify-gist-theme-light .token.keyword { color: #d73a49 !important; }
+      .sify-gist-theme-light .token.function,
+      .sify-gist-theme-light .token.class-name { color: #6f42c1 !important; }
+      .sify-gist-theme-light .token.regex,
+      .sify-gist-theme-light .token.important,
+      .sify-gist-theme-light .token.variable { color: #e36209 !important; }
+      .sify-gist-theme-light .sify-gist-footer {
+        background-color: #f6f8fa !important;
+        border-top-color: #d0d7de !important;
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-footer a {
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-footer a:hover {
+        color: #0969da !important;
       }
     </style>
     <div class="sify-gist-header">
@@ -223,6 +610,42 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// 使用 Prism.js 高亮代码
+function highlightCode(code: string, language: string): string {
+  // 获取实际语言
+  const actualLang = languageMap[language.toLowerCase()] || language.toLowerCase();
+  
+  try {
+    // 检查 Prism 是否支持该语言
+    if (Prism.languages[actualLang]) {
+      return Prism.highlight(code, Prism.languages[actualLang], actualLang);
+    }
+    // 回退到自动检测
+    return Prism.highlight(code, Prism.languages.javascript, 'javascript');
+  } catch {
+    // 如果高亮失败，返回转义后的纯文本
+    return escapeHtml(code);
+  }
+}
+
+// 生成带行号的代码 HTML
+function generateCodeHtml(code: string, language: string): string {
+  const highlighted = highlightCode(code, language);
+  const lines = highlighted.split('\n');
+  const lineCount = lines.length;
+  const lineNumberWidth = String(lineCount).length * 0.6 + 1;
+  
+  const linesHtml = lines.map((line, index) => {
+    const lineNum = index + 1;
+    return `<tr class="sify-gist-line">
+      <td class="sify-gist-line-num" style="width: ${lineNumberWidth}em;">${lineNum}</td>
+      <td class="sify-gist-line-code">${line || ' '}</td>
+    </tr>`;
+  }).join('');
+  
+  return `<table class="sify-gist-code-table">${linesHtml}</table>`;
 }
 
 function formatDate(dateStr: string): string {
