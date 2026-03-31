@@ -216,61 +216,117 @@ function ProfileContent() {
 
   return (
     <ProtectedRoute>
-      <div className="container-main py-6">
+      <div className="container-main py-8">
         {/* 用户信息卡片 */}
-        <div className="gist-card mb-6">
-          <div className="flex flex-col items-center py-6">
-            <AvatarUpload 
-              userId={userInfo?.id} 
-              currentAvatar={userInfo?.avatar_url} 
-              onAvatarUpdate={handleAvatarUpdate} 
-            />
-            <div className="mt-4 text-center">
-              <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>
-                {userInfo?.name || userInfo?.email?.split('@')[0] || '用户'}
-              </h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>{userInfo?.email}</p>
+        <div className="card mb-8 overflow-hidden">
+          <div className="p-8" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)' }}>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full opacity-20 blur-xl" style={{ backgroundColor: 'white' }}></div>
+                <AvatarUpload 
+                  userId={userInfo?.id} 
+                  currentAvatar={userInfo?.avatar_url} 
+                  onAvatarUpdate={handleAvatarUpdate} 
+                />
+              </div>
+              <div className="text-center md:text-left flex-1">
+                <h1 className="text-2xl font-bold text-white mb-1">
+                  {userInfo?.name || userInfo?.email?.split('@')[0] || '用户'}
+                </h1>
+                <p className="text-sm text-white opacity-90">{userInfo?.email}</p>
+              </div>
+              <button
+                onClick={openPasswordModal}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                  color: 'white',
+                  backdropFilter: 'blur(10px)'
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                修改密码
+              </button>
             </div>
-            <button
-              onClick={openPasswordModal}
-              className="btn-outline mt-4 px-4 py-1.5 text-sm"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              修改密码
-            </button>
+          </div>
+          
+          {/* 统计信息 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px" style={{ backgroundColor: 'var(--color-border)' }}>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>{userGists?.total || 0}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>创建的 Gist</div>
+            </div>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>{starredGists.length}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>收藏的 Gist</div>
+            </div>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>
+                {userGists?.data?.reduce((sum, g) => sum + g.files.length, 0) || 0}
+              </div>
+              <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>文件总数</div>
+            </div>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>
+                {userGists?.data?.reduce((sum, g) => sum + (g.topics?.length || 0), 0) || 0}
+              </div>
+              <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>标签总数</div>
+            </div>
           </div>
         </div>
 
         {/* 标签页 */}
-        <div className="gist-card overflow-hidden">
-          <div className="border-b" style={{ borderColor: 'var(--color-border)' }}>
-            <nav className="flex">
+        <div className="card overflow-hidden">
+          <div className="border-b" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-nav)' }}>
+            <nav className="flex px-6">
               <button
                 onClick={() => setActiveTab('created')}
-                className="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                className="px-6 py-4 text-sm font-medium border-b-2 transition-all relative"
                 style={{ 
                   borderColor: activeTab === 'created' ? 'var(--color-primary)' : 'transparent',
                   color: activeTab === 'created' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                 }}
               >
-                我创建的 ({userGists?.total || 0})
+                <div className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  我创建的
+                  <span className="px-2 py-0.5 rounded-full text-xs" style={{ 
+                    backgroundColor: activeTab === 'created' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+                    color: activeTab === 'created' ? 'white' : 'var(--color-text-muted)'
+                  }}>
+                    {userGists?.total || 0}
+                  </span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('starred')}
-                className="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+                className="px-6 py-4 text-sm font-medium border-b-2 transition-all"
                 style={{ 
                   borderColor: activeTab === 'starred' ? 'var(--color-primary)' : 'transparent',
                   color: activeTab === 'starred' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                 }}
               >
-                我收藏的 ({starredGists.length})
+                <div className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                  我收藏的
+                  <span className="px-2 py-0.5 rounded-full text-xs" style={{ 
+                    backgroundColor: activeTab === 'starred' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+                    color: activeTab === 'starred' ? 'white' : 'var(--color-text-muted)'
+                  }}>
+                    {starredGists.length}
+                  </span>
+                </div>
               </button>
             </nav>
           </div>
 
-          <div className="p-4">
+          <div className="p-6" style={{ backgroundColor: 'var(--color-bg-main)' }}>
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
@@ -278,55 +334,86 @@ function ProfileContent() {
               </div>
             ) : activeTab === 'created' ? (
               userGists && userGists.data.length > 0 ? (
-                <div>
-                  <div className="gist-card border-0">
-                    {userGists.data.map((gist) => (
-                      <div key={gist.id} className="list-item">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                <div className="card">
+                  {userGists.data.map((gist) => (
+                    <div
+                      key={gist.id}
+                      className="gist-item group"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <Link
+                        href={`/gists/${gist.id}`}
+                        className="flex-1 min-w-0"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                          </svg>
+                          <span className="gist-item-title">{gist.title || '未命名'}</span>
+                          {getVisibilityBadge(gist.visibility)}
+                        </div>
+                        {gist.description && (
+                          <p className="gist-item-desc truncate">
+                            {gist.description}
+                          </p>
+                        )}
+                        <div className="gist-item-meta flex items-center gap-4 mt-2">
+                          <span className="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <Link 
-                              href={`/gists/${gist.id}`}
-                              className="font-medium truncate"
-                              style={{ color: 'var(--color-primary)' }}
-                            >
-                              {gist.title || '未命名 Gist'}
-                            </Link>
-                            {getVisibilityBadge(gist.visibility)}
-                          </div>
-                          {gist.description && (
-                            <p className="text-sm mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                              {gist.description}
-                            </p>
+                            {gist.files.length === 1 ? '1 file' : `${gist.files.length} files`}
+                          </span>
+                          <span>{new Date(gist.updated_at).toLocaleDateString('zh-CN')}</span>
+                        </div>
+                      </Link>
+
+                      {/* 文件标签和操作按钮 */}
+                      <div className="flex items-center gap-3 ml-4">
+                        <div className="flex items-center gap-2">
+                          {gist.files.slice(0, 3).map((file, index) => (
+                            <span key={index} className="badge">
+                              {file.filename}
+                            </span>
+                          ))}
+                          {gist.files.length > 3 && (
+                            <span className="badge">+{gist.files.length - 3}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                            {gist.files.length} 文件
-                          </span>
-                          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                            {new Date(gist.created_at).toLocaleDateString('zh-CN')}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => router.push(`/gists/${gist.id}/edit`)}
-                              className="btn-sm"
-                            >
-                              编辑
-                            </button>
-                            <button
-                              onClick={() => handleDeleteGist(gist.id)}
-                              className="btn-danger px-2 py-1 text-xs"
-                            >
-                              删除
-                            </button>
-                          </div>
+                        
+                        {/* 编辑和删除按钮 */}
+                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              router.push(`/gists/${gist.id}/edit`);
+                            }}
+                            className="p-1.5 rounded-md transition-colors hover:bg-opacity-80"
+                            style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                            title="编辑"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDeleteGist(gist.id);
+                            }}
+                            className="p-1.5 rounded-md transition-colors hover:bg-red-50"
+                            style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                            title="删除"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                   
                   {userGists.totalPages > 1 && (
                     <Pagination
@@ -338,66 +425,90 @@ function ProfileContent() {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                    还没有创建 Gist
-                  </h3>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                    开始创建你的第一个代码片段
-                  </p>
-                  <Link href="/create" className="btn-primary px-4 py-1.5 text-sm mt-4 inline-flex">
-                    创建 Gist
-                  </Link>
+                <div className="card">
+                  <div className="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 className="empty-state-title">还没有创建 Gist</h3>
+                    <p className="empty-state-desc">开始创建你的第一个代码片段</p>
+                    <Link href="/create" className="btn btn-primary mt-4">
+                      创建 Gist
+                    </Link>
+                  </div>
                 </div>
               )
             ) : starredGists.length > 0 ? (
-              <div className="gist-card border-0">
+              <div className="card">
                 {starredGists.map((gist) => (
-                  <div key={gist.id} className="list-item">
+                  <Link 
+                    key={gist.id} 
+                    href={`/gists/${gist.id}`}
+                    className="gist-item"
+                  >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
-                        <Link 
-                          href={`/gists/${gist.id}`}
-                          className="font-medium truncate"
-                          style={{ color: 'var(--color-primary)' }}
-                        >
-                          {gist.title || '未命名 Gist'}
-                        </Link>
+                        <span className="gist-item-title">{gist.title || 'Untitled'}</span>
                       </div>
                       {gist.description && (
-                        <p className="text-sm mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                        <p className="gist-item-desc truncate">
                           {gist.description}
                         </p>
                       )}
+                      <div className="gist-item-meta flex items-center gap-4 mt-2">
+                        {gist.user && (
+                          <span className="flex items-center gap-1.5">
+                            {gist.user.avatar_url ? (
+                              <img src={gist.user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                                {gist.user.name?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span>{gist.user.name}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {gist.files.length === 1 ? '1 file' : `${gist.files.length} files`}
+                        </span>
+                        <span>{new Date(gist.updated_at).toLocaleDateString('zh-CN')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                        {gist.files.length} 文件
-                      </span>
-                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                        {new Date(gist.created_at).toLocaleDateString('zh-CN')}
-                      </span>
+                    
+                    {/* 文件标签 */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {gist.files.slice(0, 3).map((file, index) => (
+                        <span 
+                          key={index}
+                          className="badge"
+                        >
+                          {file.filename}
+                        </span>
+                      ))}
+                      {gist.files.length > 3 && (
+                        <span className="badge">
+                          +{gist.files.length - 3}
+                        </span>
+                      )}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 mb-3" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                  还没有收藏 Gist
-                </h3>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  浏览并收藏你喜欢的代码片段
-                </p>
+              <div className="card">
+                <div className="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                  <h3 className="empty-state-title">还没有收藏 Gist</h3>
+                  <p className="empty-state-desc">浏览并收藏你喜欢的代码片段</p>
+                </div>
               </div>
             )}
           </div>
@@ -409,16 +520,27 @@ function ProfileContent() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div 
-              className="fixed inset-0 transition-opacity"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+              className="fixed inset-0 transition-opacity backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
               onClick={closePasswordModal}
             ></div>
 
-            <div className="gist-card relative w-full max-w-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>修改密码</h3>
-                <button onClick={closePasswordModal} style={{ color: 'var(--color-text-muted)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="card relative w-full max-w-md p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(74, 124, 247, 0.1)' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" style={{ color: 'var(--color-primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>修改密码</h3>
+                </div>
+                <button 
+                  onClick={closePasswordModal} 
+                  className="p-1.5 rounded-lg transition-colors hover:bg-opacity-80"
+                  style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -426,7 +548,7 @@ function ProfileContent() {
               
               <form onSubmit={handlePasswordChange}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
                     当前密码
                   </label>
                   <input
@@ -434,12 +556,16 @@ function ProfileContent() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 text-sm"
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
+                    style={{ 
+                      backgroundColor: 'var(--color-bg-main)',
+                      borderColor: 'var(--color-border)'
+                    }}
                     placeholder="输入当前密码"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
                     新密码
                   </label>
                   <input
@@ -448,12 +574,16 @@ function ProfileContent() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full px-3 py-2 text-sm"
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
+                    style={{ 
+                      backgroundColor: 'var(--color-bg-main)',
+                      borderColor: 'var(--color-border)'
+                    }}
                     placeholder="输入新密码（至少6位）"
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
                     确认新密码
                   </label>
                   <input
@@ -461,25 +591,39 @@ function ProfileContent() {
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 text-sm"
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
+                    style={{ 
+                      backgroundColor: 'var(--color-bg-main)',
+                      borderColor: 'var(--color-border)'
+                    }}
                     placeholder="再次输入新密码"
                   />
                 </div>
                 {passwordError && (
-                  <div className="mb-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                  <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {passwordError}
                   </div>
                 )}
                 {passwordSuccess && (
-                  <div className="mb-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#D1FAE5', color: '#059669' }}>
+                  <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: '#D1FAE5', color: '#059669' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {passwordSuccess}
                   </div>
                 )}
-                <div className="flex justify-end gap-3 mt-6">
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
                   <button
                     type="button"
                     onClick={closePasswordModal}
-                    className="btn-outline px-4 py-2"
+                    className="px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{ 
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      color: 'var(--color-text-main)'
+                    }}
                   >
                     取消
                   </button>
