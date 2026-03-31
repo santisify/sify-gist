@@ -147,11 +147,11 @@ export default function CreateGistPage() {
     setFiles(newFiles);
   };
 
-  const handleContentChange = (content: string) => {
+  const handleContentChange = (content: string | undefined) => {
     const newFiles = [...files];
     newFiles[activeFileIndex] = {
       ...newFiles[activeFileIndex],
-      content
+      content: content ?? ''
     };
     setFiles(newFiles);
   };

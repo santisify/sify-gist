@@ -188,11 +188,11 @@ export default function EditGistPageClient() {
     setFiles(newFiles);
   };
 
-  const handleContentChange = (content: string) => {
+  const handleContentChange = (content: string | undefined) => {
     const newFiles = [...files];
     newFiles[activeFileIndex] = {
       ...newFiles[activeFileIndex],
-      content
+      content: content ?? ''
     };
     setFiles(newFiles);
   };
