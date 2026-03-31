@@ -41,9 +41,26 @@ export async function GET(
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const baseUrl = `${protocol}://${origin}`;
 
-    // 生成 HTML 内容（使用语法高亮）
-    const filesHtml = gist.files.map(file => `
-      <div class="sify-gist-file">
+    // 生成多文件标签页（如果有多个文件）
+    const hasMultipleFiles = gist.files.length > 1;
+    
+    // 生成标签页导航
+    const tabsHtml = hasMultipleFiles ? `
+      <div class="sify-gist-tabs">
+        ${gist.files.map((file, index) => `
+          <button class="sify-gist-tab ${index === 0 ? 'active' : ''}" data-index="${index}">
+            <svg class="sify-gist-tab-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            ${escapeHtml(file.filename)}
+          </button>
+        `).join('')}
+      </div>
+    ` : '';
+
+    // 生成文件内容（使用语法高亮）
+    const filesHtml = gist.files.map((file, index) => `
+      <div class="sify-gist-file ${hasMultipleFiles ? 'sify-gist-file-tabbed' : ''}" data-index="${index}" style="${hasMultipleFiles && index > 0 ? 'display: none;' : ''}">
         <div class="sify-gist-file-header">
           <span class="sify-gist-filename">${escapeHtml(file.filename)}</span>
           <a class="sify-gist-raw-link" href="${baseUrl}/api/gists/${id}/raw/${encodeURIComponent(file.filename)}" target="_blank">view raw</a>
@@ -146,8 +163,46 @@ export async function GET(
         border-radius: 12px;
         text-decoration: none;
       }
+      .sify-gist-tabs {
+        display: flex;
+        overflow-x: auto;
+        background-color: #f6f8fa;
+        border-bottom: 1px solid #d0d7de;
+        gap: 0;
+      }
+      .sify-gist-tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #57606a;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .sify-gist-tab:hover {
+        color: #24292f;
+        background-color: #f3f4f6;
+      }
+      .sify-gist-tab.active {
+        color: #24292f;
+        border-bottom-color: #0969da;
+      }
+      .sify-gist-tab-icon {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
       .sify-gist-file {
         border-bottom: 1px solid #d0d7de;
+      }
+      .sify-gist-file-tabbed .sify-gist-file-header {
+        display: none;
       }
       .sify-gist-file:last-child {
         border-bottom: none;
@@ -288,6 +343,21 @@ export async function GET(
           color: #58a6ff;
           background-color: #1f3a5f;
         }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tabs {
+          background-color: #161b22;
+          border-bottom-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab {
+          color: #8b949e;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab:hover {
+          color: #c9d1d9;
+          background-color: #21262d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab.active {
+          color: #c9d1d9;
+          border-bottom-color: #58a6ff;
+        }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-file {
           border-bottom-color: #30363d;
         }
@@ -391,6 +461,21 @@ export async function GET(
         color: #58a6ff !important;
         background-color: #1f3a5f !important;
       }
+      .sify-gist-theme-dark .sify-gist-tabs {
+        background-color: #161b22 !important;
+        border-bottom-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-tab {
+        color: #8b949e !important;
+      }
+      .sify-gist-theme-dark .sify-gist-tab:hover {
+        color: #c9d1d9 !important;
+        background-color: #21262d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-tab.active {
+        color: #c9d1d9 !important;
+        border-bottom-color: #58a6ff !important;
+      }
       .sify-gist-theme-dark .sify-gist-file {
         border-bottom-color: #30363d !important;
       }
@@ -493,6 +578,21 @@ export async function GET(
         color: #0969da !important;
         background-color: #ddf4ff !important;
       }
+      .sify-gist-theme-light .sify-gist-tabs {
+        background-color: #f6f8fa !important;
+        border-bottom-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-tab {
+        color: #57606a !important;
+      }
+      .sify-gist-theme-light .sify-gist-tab:hover {
+        color: #24292f !important;
+        background-color: #f3f4f6 !important;
+      }
+      .sify-gist-theme-light .sify-gist-tab.active {
+        color: #24292f !important;
+        border-bottom-color: #0969da !important;
+      }
       .sify-gist-theme-light .sify-gist-file {
         border-bottom-color: #d0d7de !important;
       }
@@ -571,6 +671,7 @@ export async function GET(
     </div>
     ${descriptionHtml}
     ${topicsHtml}
+    ${tabsHtml}
     <div class="sify-gist-files">${filesHtml}</div>
     <div class="sify-gist-footer">
       <span>via <a href="${baseUrl}" target="_blank">Sify Gist</a></span>
@@ -587,6 +688,29 @@ export async function GET(
     // 如果没有指定容器，插入到 script 标签之后
     document.currentScript.insertAdjacentElement('afterend', gistContainer);
   }
+  
+  // 标签页切换逻辑
+  var tabs = gistContainer.querySelectorAll('.sify-gist-tab');
+  var files = gistContainer.querySelectorAll('.sify-gist-file');
+  
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var index = this.getAttribute('data-index');
+      
+      // 更新标签激活状态
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      
+      // 切换文件显示
+      files.forEach(function(file) {
+        if (file.getAttribute('data-index') === index) {
+          file.style.display = 'block';
+        } else {
+          file.style.display = 'none';
+        }
+      });
+    });
+  });
 })();
 `.trim();
 
