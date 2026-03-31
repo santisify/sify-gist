@@ -22,9 +22,8 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   )
 });
 
-interface File {
-  id?: number;
-  gist_id?: string;
+interface FileItem {
+  id: string;
   filename: string;
   content: string;
   language: string;
@@ -38,8 +37,65 @@ interface Gist {
   visibility: Visibility;
   created_at: string;
   updated_at: string;
-  files: File[];
+  files: FileItem[];
 }
+
+const generateFileId = () => Math.random().toString(36).substring(2, 9);
+
+const detectLanguageFromExtension = (filename: string): string => {
+  const extension = filename.split('.').pop()?.toLowerCase() || '';
+  
+  const extensionMap: Record<string, string> = {
+    'js': 'javascript',
+    'jsx': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'py': 'python',
+    'java': 'java',
+    'html': 'html',
+    'htm': 'html',
+    'css': 'css',
+    'json': 'json',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'md': 'markdown',
+    'markdown': 'markdown',
+    'sh': 'bash',
+    'bash': 'bash',
+    'sql': 'sql',
+    'go': 'go',
+    'rs': 'rust',
+    'php': 'php',
+    'cs': 'csharp',
+    'cpp': 'cpp',
+    'c': 'c',
+    'h': 'c',
+    'hpp': 'cpp',
+    'kt': 'kotlin',
+    'swift': 'swift',
+    'rb': 'ruby',
+    'scala': 'scala',
+    'pl': 'perl',
+    'r': 'r',
+    'dart': 'dart',
+    'ex': 'elixir',
+    'exs': 'elixir',
+    'erl': 'erlang',
+    'hs': 'haskell',
+    'lua': 'lua',
+    'ps1': 'powershell',
+    'psm1': 'powershell',
+    'Dockerfile': 'dockerfile',
+    'xml': 'xml',
+    'graphql': 'graphql',
+    'gql': 'graphql',
+    'toml': 'toml',
+    'txt': 'text',
+    'log': 'text',
+  };
+  
+  return extensionMap[extension] || 'text';
+};
 
 export default function EditGistPageClient() {
   const params = useParams();
@@ -48,9 +104,8 @@ export default function EditGistPageClient() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState<Visibility>('public');
-  const [fileName, setFileName] = useState('file.txt');
-  const [fileContent, setFileContent] = useState('');
-  const [language, setLanguage] = useState('text');
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,10 +124,14 @@ export default function EditGistPageClient() {
           setDescription(data.description || '');
           setVisibility(data.visibility || 'public');
           if (data.files && data.files.length > 0) {
-            const firstFile = data.files[0];
-            setFileName(firstFile.filename);
-            setFileContent(firstFile.content);
-            setLanguage(firstFile.language || 'text');
+            // 为每个文件生成唯一ID
+            const filesWithId = data.files.map((f: any) => ({
+              id: f.id?.toString() || generateFileId(),
+              filename: f.filename,
+              content: f.content,
+              language: f.language || 'text'
+            }));
+            setFiles(filesWithId);
           }
         } else {
           setError('获取 Gist 失败: ' + response.statusText);
@@ -90,66 +149,53 @@ export default function EditGistPageClient() {
     }
   }, [params.id]);
 
-  // 根据文件名后缀自动检测语言
-  useEffect(() => {
-    const detectLanguageFromExtension = (filename: string) => {
-      const extension = filename.split('.').pop()?.toLowerCase() || '';
-      
-      const extensionMap: Record<string, string> = {
-        'js': 'javascript',
-        'jsx': 'javascript',
-        'ts': 'typescript',
-        'tsx': 'typescript',
-        'py': 'python',
-        'java': 'java',
-        'html': 'html',
-        'htm': 'html',
-        'css': 'css',
-        'json': 'json',
-        'yaml': 'yaml',
-        'yml': 'yaml',
-        'md': 'markdown',
-        'markdown': 'markdown',
-        'sh': 'bash',
-        'bash': 'bash',
-        'sql': 'sql',
-        'go': 'go',
-        'rs': 'rust',
-        'php': 'php',
-        'cs': 'csharp',
-        'cpp': 'cpp',
-        'c': 'c',
-        'h': 'c',
-        'hpp': 'cpp',
-        'kt': 'kotlin',
-        'swift': 'swift',
-        'rb': 'ruby',
-        'scala': 'scala',
-        'pl': 'perl',
-        'r': 'r',
-        'dart': 'dart',
-        'ex': 'elixir',
-        'exs': 'elixir',
-        'erl': 'erlang',
-        'hs': 'haskell',
-        'lua': 'lua',
-        'ps1': 'powershell',
-        'psm1': 'powershell',
-        'Dockerfile': 'dockerfile',
-        'xml': 'xml',
-        'graphql': 'graphql',
-        'gql': 'graphql',
-        'toml': 'toml',
-        'txt': 'text',
-        'log': 'text',
-      };
-      
-      return extensionMap[extension] || 'text';
+  const activeFile = files[activeFileIndex];
+
+  const handleAddFile = () => {
+    const newFile: FileItem = {
+      id: generateFileId(),
+      filename: `file-${files.length + 1}.txt`,
+      content: '',
+      language: 'text'
     };
+    setFiles([...files, newFile]);
+    setActiveFileIndex(files.length);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    if (files.length === 1) {
+      setError('至少需要保留一个文件');
+      return;
+    }
     
-    const detectedLanguage = detectLanguageFromExtension(fileName);
-    setLanguage(detectedLanguage);
-  }, [fileName]);
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    
+    if (activeFileIndex >= newFiles.length) {
+      setActiveFileIndex(newFiles.length - 1);
+    } else if (activeFileIndex > index) {
+      setActiveFileIndex(activeFileIndex - 1);
+    }
+  };
+
+  const handleFileNameChange = (index: number, filename: string) => {
+    const newFiles = [...files];
+    newFiles[index] = {
+      ...newFiles[index],
+      filename,
+      language: detectLanguageFromExtension(filename)
+    };
+    setFiles(newFiles);
+  };
+
+  const handleContentChange = (content: string) => {
+    const newFiles = [...files];
+    newFiles[activeFileIndex] = {
+      ...newFiles[activeFileIndex],
+      content
+    };
+    setFiles(newFiles);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,14 +209,16 @@ export default function EditGistPageClient() {
         return;
       }
       
-      if (!fileContent.trim()) {
-        setError('文件内容不能为空');
+      const emptyFile = files.find(f => !f.content.trim());
+      if (emptyFile) {
+        setError(`文件 "${emptyFile.filename}" 的内容不能为空`);
         setIsSubmitting(false);
         return;
       }
       
-      if (!fileName.trim()) {
-        setError('文件名不能为空');
+      const emptyName = files.find(f => !f.filename.trim());
+      if (emptyName) {
+        setError('所有文件必须有文件名');
         setIsSubmitting(false);
         return;
       }
@@ -187,11 +235,11 @@ export default function EditGistPageClient() {
           title,
           description,
           visibility,
-          files: [{
-            filename: fileName,
-            content: fileContent,
-            language
-          }]
+          files: files.map(f => ({
+            filename: f.filename,
+            content: f.content,
+            language: f.language
+          }))
         })
       });
       
@@ -371,32 +419,80 @@ export default function EditGistPageClient() {
               </div>
             </div>
 
-            {/* 文件名 */}
+            {/* 文件标签页 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                文件名
-              </label>
-              <input
-                type="text"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                className="w-full px-3 py-2 text-sm"
-                placeholder="文件名，例如: hello.js"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                  文件
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddFile}
+                  className="btn btn-sm flex items-center gap-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  添加文件
+                </button>
+              </div>
+              
+              {/* 文件标签页 */}
+              <div className="flex border-b overflow-x-auto" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-code)' }}>
+                {files.map((file, index) => (
+                  <div
+                    key={file.id}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer group ${
+                      activeFileIndex === index ? 'active-tab' : ''
+                    }`}
+                    style={{
+                      color: activeFileIndex === index ? 'var(--color-text-main)' : 'var(--color-text-secondary)',
+                      borderColor: activeFileIndex === index ? 'var(--color-primary)' : 'transparent'
+                    }}
+                    onClick={() => setActiveFileIndex(index)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={file.filename}
+                      onChange={(e) => handleFileNameChange(index, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-none outline-none w-24 sm:w-32"
+                      style={{ color: 'inherit' }}
+                      placeholder="文件名"
+                    />
+                    {files.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFile(index);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                        title="删除文件"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* 代码编辑器 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
-                文件内容
-              </label>
               <div className="code-container overflow-hidden">
                 <div className="h-96">
                   <MonacoEditor
+                    key={activeFile?.id}
                     height="100%"
-                    language={getMonacoLanguage(language)}
-                    value={fileContent}
-                    onChange={(value) => setFileContent(value || '')}
+                    language={getMonacoLanguage(activeFile?.language || 'text')}
+                    value={activeFile?.content || ''}
+                    onChange={handleContentChange}
                     theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light'}
                     options={{
                       minimap: { enabled: false },
@@ -412,7 +508,7 @@ export default function EditGistPageClient() {
                 </div>
               </div>
               <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                语言: {getLanguageByValue(language).label} · 内容长度: {fileContent.length}
+                语言: {getLanguageByValue(activeFile?.language || 'text').label} · 内容长度: {activeFile?.content?.length || 0}
               </div>
             </div>
 
