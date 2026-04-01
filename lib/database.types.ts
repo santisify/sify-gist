@@ -18,7 +18,6 @@ export interface Database {
           email: string
           password_hash: string
           avatar_url: string | null
-          email_verified: boolean
           created_at: string
         }
         Insert: {
@@ -27,7 +26,6 @@ export interface Database {
           email: string
           password_hash: string
           avatar_url?: string | null
-          email_verified?: boolean
           created_at?: string
         }
         Update: {
@@ -36,7 +34,6 @@ export interface Database {
           email?: string
           password_hash?: string
           avatar_url?: string | null
-          email_verified?: boolean
           created_at?: string
         }
         Relationships: []

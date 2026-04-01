@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,30 +8,15 @@ export default function LoginPageClient() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-
-  useEffect(() => {
-    setMounted(true);
-    // 检查 URL 参数，显示验证成功或密码重置成功的消息
-    if (searchParams.get('verified') === 'true') {
-      setSuccess('邮箱验证成功！您现在可以登录了。');
-    } else if (searchParams.get('reset') === 'true') {
-      setSuccess('密码重置成功！请使用新密码登录。');
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    setSuccess(null);
-    setNeedsEmailVerification(false);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -59,11 +44,6 @@ export default function LoginPageClient() {
       } else {
         const data = await response.json();
         setError(data.error || 'Login failed');
-        
-        // 检查是否需要邮箱验证
-        if (data.needsEmailVerification) {
-          setNeedsEmailVerification(true);
-        }
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -95,34 +75,16 @@ export default function LoginPageClient() {
           </div>
           
           <div className="card-body">
-            {mounted && success && (
-              <div className="alert alert-success mb-4">
-                {success}
-              </div>
-            )}
-            
             {error && (
               <div className="alert alert-danger mb-4">
                 {error}
-                {needsEmailVerification && (
-                  <div className="mt-2">
-                    <Link 
-                      href="/auth/forgot-password"
-                      className="text-sm underline hover:no-underline"
-                      style={{ color: 'var(--color-text-link)' }}
-                    >
-                      重新发送验证邮件
-                    </Link>
-                  </div>
-                )}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label" htmlFor="email">Email</label>
+                <label className="form-label">Email</label>
                 <input
-                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -133,18 +95,8 @@ export default function LoginPageClient() {
               </div>
 
               <div className="form-group">
-                <div className="flex items-center justify-between">
-                  <label className="form-label" htmlFor="password">Password</label>
-                  <Link 
-                    href="/auth/forgot-password"
-                    className="text-xs hover:underline"
-                    style={{ color: 'var(--color-text-link)' }}
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <label className="form-label">Password</label>
                 <input
-                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

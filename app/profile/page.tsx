@@ -563,16 +563,6 @@ function ProfileContent() {
                     }}
                     placeholder="输入当前密码"
                   />
-                  <div className="mt-2">
-                    <Link 
-                      href="/auth/forgot-password"
-                      className="text-xs transition-colors hover:underline"
-                      style={{ color: 'var(--color-text-link)' }}
-                      onClick={closePasswordModal}
-                    >
-                      忘记密码？通过邮件重置
-                    </Link>
-                  </div>
                 </div>
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
