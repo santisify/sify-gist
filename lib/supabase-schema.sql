@@ -1,88 +1,97 @@
 -- Supabase 数据库表结构
 
 -- 创建 users 表
-CREATE TABLE users (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    avatar_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE users
+(
+    id            TEXT PRIMARY KEY,
+    name          TEXT        NOT NULL,
+    email         TEXT UNIQUE NOT NULL,
+    password_hash TEXT,        -- 可为空，OAuth 用户没有密码
+    avatar_url    TEXT,
+    github_id     TEXT UNIQUE, -- GitHub OAuth 用户 ID
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 创建 gists 表
-CREATE TABLE gists (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    title TEXT,
+CREATE TABLE gists
+(
+    id          TEXT PRIMARY KEY,
+    user_id     TEXT,
+    title       TEXT,
     description TEXT,
-    visibility TEXT DEFAULT 'public' CHECK (visibility IN ('public', 'unlisted', 'private')),
-    forked_from TEXT,  -- Fork 来源 gist ID
-    stars_count INTEGER DEFAULT 0,  -- 收藏数
-    forks_count INTEGER DEFAULT 0,  -- Fork 数
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    visibility  TEXT      DEFAULT 'public' CHECK (visibility IN ('public', 'unlisted', 'private')),
+    forked_from TEXT,                -- Fork 来源 gist ID
+    stars_count INTEGER   DEFAULT 0, -- 收藏数
+    forks_count INTEGER   DEFAULT 0, -- Fork 数
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (forked_from) REFERENCES gists (id) ON DELETE SET NULL
 );
 
 -- 创建 gist_files 表
-CREATE TABLE gist_files (
-    id SERIAL PRIMARY KEY,
-    gist_id TEXT NOT NULL,
+CREATE TABLE gist_files
+(
+    id       SERIAL PRIMARY KEY,
+    gist_id  TEXT NOT NULL,
     filename TEXT NOT NULL,
-    content TEXT NOT NULL,
+    content  TEXT NOT NULL,
     language TEXT DEFAULT 'text',
     FOREIGN KEY (gist_id) REFERENCES gists (id) ON DELETE CASCADE
 );
 
 -- 创建 gist_versions 表（用于版本控制）
-CREATE TABLE gist_versions (
-    id SERIAL PRIMARY KEY,
-    gist_id TEXT NOT NULL,
+CREATE TABLE gist_versions
+(
+    id             SERIAL PRIMARY KEY,
+    gist_id        TEXT    NOT NULL,
     version_number INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (gist_id) REFERENCES gists (id) ON DELETE CASCADE
 );
 
 -- 创建 gist_file_versions 表（存储每个文件的版本内容）
-CREATE TABLE gist_file_versions (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE gist_file_versions
+(
+    id              SERIAL PRIMARY KEY,
     gist_version_id INTEGER NOT NULL,
-    filename TEXT NOT NULL,
-    content TEXT NOT NULL,
-    language TEXT DEFAULT 'text',
+    filename        TEXT    NOT NULL,
+    content         TEXT    NOT NULL,
+    language        TEXT DEFAULT 'text',
     FOREIGN KEY (gist_version_id) REFERENCES gist_versions (id) ON DELETE CASCADE
 );
 
 -- 创建 gist_stars 表（用于收藏功能）
-CREATE TABLE gist_stars (
-    id SERIAL PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    gist_id TEXT NOT NULL,
+CREATE TABLE gist_stars
+(
+    id         SERIAL PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    gist_id    TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (gist_id) REFERENCES gists (id) ON DELETE CASCADE,
-    UNIQUE(user_id, gist_id)
+    UNIQUE (user_id, gist_id)
 );
 
 -- 创建 gist_topics 表（用于标签功能）
-CREATE TABLE gist_topics (
-    id SERIAL PRIMARY KEY,
-    gist_id TEXT NOT NULL,
-    topic TEXT NOT NULL,
+CREATE TABLE gist_topics
+(
+    id         SERIAL PRIMARY KEY,
+    gist_id    TEXT NOT NULL,
+    topic      TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (gist_id) REFERENCES gists (id) ON DELETE CASCADE
 );
 
 -- 创建索引以提高查询性能
-CREATE INDEX idx_gists_user_id ON gists(user_id);
-CREATE INDEX idx_gists_forked_from ON gists(forked_from);
-CREATE INDEX idx_gists_visibility ON gists(visibility);
-CREATE INDEX idx_gist_files_gist_id ON gist_files(gist_id);
-CREATE INDEX idx_gist_versions_gist_id ON gist_versions(gist_id);
-CREATE INDEX idx_gist_file_versions_gist_version_id ON gist_file_versions(gist_version_id);
-CREATE INDEX idx_gist_stars_user_id ON gist_stars(user_id);
-CREATE INDEX idx_gist_stars_gist_id ON gist_stars(gist_id);
-CREATE INDEX idx_gist_topics_gist_id ON gist_topics(gist_id);
-CREATE INDEX idx_gist_topics_topic ON gist_topics(topic);
+CREATE INDEX idx_gists_user_id ON gists (user_id);
+CREATE INDEX idx_gists_forked_from ON gists (forked_from);
+CREATE INDEX idx_gists_visibility ON gists (visibility);
+CREATE INDEX idx_gist_files_gist_id ON gist_files (gist_id);
+CREATE INDEX idx_gist_versions_gist_id ON gist_versions (gist_id);
+CREATE INDEX idx_gist_file_versions_gist_version_id ON gist_file_versions (gist_version_id);
+CREATE INDEX idx_gist_stars_user_id ON gist_stars (user_id);
+CREATE INDEX idx_gist_stars_gist_id ON gist_stars (gist_id);
+CREATE INDEX idx_gist_topics_gist_id ON gist_topics (gist_id);
+CREATE INDEX idx_gist_topics_topic ON gist_topics (topic);
+CREATE INDEX idx_users_github_id ON users (github_id);
