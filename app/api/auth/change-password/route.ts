@@ -34,14 +34,23 @@ export async function POST(request: NextRequest) {
 
     // 方式1: 通过邮件链接重置密码（使用 accessToken）
     if (accessToken) {
-      // 使用 access token 更新密码
-      const { error } = await supabase.auth.updateUser(
-        { password: newPassword },
-        { 
+      // 验证 access token 并获取用户信息
+      const { data: { user }, error: verifyError } = await supabase.auth.getUser(accessToken);
+      
+      if (verifyError || !user) {
+        console.error('验证 token 错误:', verifyError);
+        return new Response(JSON.stringify({ error: '重置链接已过期或无效，请重新申请' }), {
+          status: 400,
           headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
+      // 使用 admin API 更新用户密码
+      const { error } = await supabase.auth.admin.updateUserById(
+        user.id,
+        { password: newPassword }
       );
 
       if (error) {
@@ -111,9 +120,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 更新密码
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      existingUser.id,
+      { password: newPassword }
+    );
 
     if (updateError) {
       console.error('更新密码错误:', updateError);
