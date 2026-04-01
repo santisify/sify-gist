@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
-import { registerUser, getUserByEmail } from '@/lib/auth';
-import { generateTokenPair } from '@/lib/jwt';
+import { getServerClient } from '@/lib/supabase-server';
+import { getUserByEmail } from '@/lib/auth';
+import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,10 +35,43 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const user = await registerUser({ name, email, password });
+    const supabase = getServerClient();
 
-    if (!user) {
-      return new Response(JSON.stringify({ error: '注册失败' }), {
+    // 使用 Supabase Auth 注册用户，启用邮箱验证
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+        data: {
+          name: name,
+        },
+      },
+    });
+
+    if (authError) {
+      console.error('Supabase 注册错误:', authError);
+      
+      // 处理特定的错误情况
+      if (authError.message.includes('already registered')) {
+        return new Response(JSON.stringify({ error: '该邮箱已被注册' }), {
+          status: 409,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+      
+      return new Response(JSON.stringify({ error: authError.message || '注册失败' }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    if (!authData.user) {
+      return new Response(JSON.stringify({ error: '注册失败，未创建用户' }), {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
@@ -45,24 +79,49 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 生成 JWT token
-    const tokens = generateTokenPair({
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-    });
+    // 在 users 表中创建用户记录
+    const userId = authData.user.id;
+    const now = new Date().toISOString();
+
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        name: name,
+        email: email,
+        password_hash: '', // 密码由 Supabase Auth 管理
+        avatar_url: null,
+        created_at: now,
+        email_verified: false,
+      });
+
+    if (insertError) {
+      console.error('创建用户记录错误:', insertError);
+      // 尝试清理 Supabase Auth 中的用户
+      await supabase.auth.admin.deleteUser(userId);
+      
+      return new Response(JSON.stringify({ error: '创建用户记录失败' }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // 检查用户是否需要邮箱验证
+    const needsEmailVerification = !authData.session;
 
     return new Response(JSON.stringify({ 
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar_url: user.avatar_url
+        id: userId,
+        name: name,
+        email: email,
+        avatar_url: null
       },
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn,
-      message: '注册成功'
+      message: needsEmailVerification 
+        ? '注册成功！请检查您的邮箱并点击验证链接以激活账户。'
+        : '注册成功',
+      needsEmailVerification
     }), {
       status: 201,
       headers: {
