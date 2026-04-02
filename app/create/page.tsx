@@ -91,7 +91,7 @@ export default function CreateGistPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<Visibility>('public');
+  const [visibility, setVisibility] = useState<Visibility>(0);
   const [files, setFiles] = useState<FileItem[]>([
     { id: generateFileId(), filename: 'file.txt', content: '', language: 'text' }
   ]);
@@ -342,9 +342,9 @@ export default function CreateGistPage() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="public"
-                    checked={visibility === 'public'}
-                    onChange={() => setVisibility('public')}
+                    value="0"
+                    checked={visibility === 0}
+                    onChange={() => setVisibility(0)}
                     className="w-4 h-4"
                   />
                   <div>
@@ -364,9 +364,9 @@ export default function CreateGistPage() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="unlisted"
-                    checked={visibility === 'unlisted'}
-                    onChange={() => setVisibility('unlisted')}
+                    value="1"
+                    checked={visibility === 1}
+                    onChange={() => setVisibility(1)}
                     className="w-4 h-4"
                   />
                   <div>
@@ -386,9 +386,9 @@ export default function CreateGistPage() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="private"
-                    checked={visibility === 'private'}
-                    onChange={() => setVisibility('private')}
+                    value="2"
+                    checked={visibility === 2}
+                    onChange={() => setVisibility(2)}
                     className="w-4 h-4"
                   />
                   <div>

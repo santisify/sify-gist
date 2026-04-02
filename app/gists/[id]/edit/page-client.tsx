@@ -103,7 +103,7 @@ export default function EditGistPageClient() {
   const [gist, setGist] = useState<Gist | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<Visibility>('public');
+  const [visibility, setVisibility] = useState<Visibility>(0);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,7 +122,7 @@ export default function EditGistPageClient() {
           // 设置表单初始值
           setTitle(data.title || '');
           setDescription(data.description || '');
-          setVisibility(data.visibility || 'public');
+          setVisibility(data.visibility || 0);
           if (data.files && data.files.length > 0) {
             // 为每个文件生成唯一ID
             const filesWithId = data.files.map((f: any) => ({
@@ -355,9 +355,9 @@ export default function EditGistPageClient() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="public"
-                    checked={visibility === 'public'}
-                    onChange={() => setVisibility('public')}
+                    value="0"
+                    checked={visibility === 0}
+                    onChange={() => setVisibility(0)}
                     className="w-4 h-4"
                   />
                   <div>
@@ -377,9 +377,9 @@ export default function EditGistPageClient() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="unlisted"
-                    checked={visibility === 'unlisted'}
-                    onChange={() => setVisibility('unlisted')}
+                    value="1"
+                    checked={visibility === 1}
+                    onChange={() => setVisibility(1)}
                     className="w-4 h-4"
                   />
                   <div>
@@ -399,9 +399,9 @@ export default function EditGistPageClient() {
                   <input
                     type="radio"
                     name="visibility"
-                    value="private"
-                    checked={visibility === 'private'}
-                    onChange={() => setVisibility('private')}
+                    value="2"
+                    checked={visibility === 2}
+                    onChange={() => setVisibility(2)}
                     className="w-4 h-4"
                   />
                   <div>

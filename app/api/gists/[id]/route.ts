@@ -29,8 +29,8 @@ export async function GET(
       });
     }
     
-    // 可见性检查
-    if (gist.visibility === 'private') {
+    // 可见性检查 (0=public, 1=unlisted, 2=private)
+    if (gist.visibility === 2) {
       const currentUserId = getUserIdFromRequest(request);
       
       if (!currentUserId || currentUserId !== gist.user_id) {

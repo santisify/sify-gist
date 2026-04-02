@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     
     // 首先获取用户收藏的 gist ID 列表
     const { data: starredIds, error: starredError } = await supabase
-      .from('gist_stars')
+      .from('likes')
       .select('gist_id')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 获取对应的 gist 信息
-    const gistIds = starredIds.map(item => item.gist_id);
+    const gistIds = starredIds.map(item => item.gist_id as string);
     const { data: gistsData, error: gistsError } = await supabase
       .from('gists')
       .select('*')
@@ -69,10 +69,11 @@ export async function GET(request: NextRequest) {
 
         starredGists.push({
           id: gistData.id as string,
+          uuid: gistData.uuid as string,
           user_id: gistData.user_id as string,
           title: gistData.title as string,
           description: gistData.description as string,
-          visibility: (gistData.visibility as Visibility) || 'public',
+          visibility: (gistData.visibility as Visibility) || 0,
           created_at: gistData.created_at as string,
           updated_at: gistData.updated_at as string,
           files: files

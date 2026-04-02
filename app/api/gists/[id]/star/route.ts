@@ -22,7 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     
     const { data, error } = await supabase
-      .from('gist_stars')
+      .from('likes')
       .insert([{ user_id: userId, gist_id: gistId }]);
     
     if (error) {
@@ -33,14 +33,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       throw error;
     }
     
-    // 更新 stars_count
-    const newStarsCount = (gist.stars_count || 0) + 1;
+    // 更新 nb_likes
+    const newLikesCount = (gist.nb_likes || 0) + 1;
     await supabase
       .from('gists')
-      .update({ stars_count: newStarsCount })
+      .update({ nb_likes: newLikesCount })
       .eq('id', gistId);
     
-    return Response.json({ message: 'Gist已收藏', stars_count: newStarsCount }, { status: 200 });
+    return Response.json({ message: 'Gist已收藏', nb_likes: newLikesCount }, { status: 200 });
   } catch (error) {
     console.error('收藏Gist时出错:', error);
     return Response.json({ error: '服务器错误' }, { status: 500 });
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
     
     const { data, error } = await supabase
-      .from('gist_stars')
+      .from('likes')
       .delete()
       .match({ user_id: userId, gist_id: gistId })
       .select();
@@ -78,14 +78,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return Response.json({ error: '未收藏此Gist' }, { status: 400 });
     }
     
-    // 更新 stars_count
-    const newStarsCount = Math.max((gist.stars_count || 0) - 1, 0);
+    // 更新 nb_likes
+    const newLikesCount = Math.max((gist.nb_likes || 0) - 1, 0);
     await supabase
       .from('gists')
-      .update({ stars_count: newStarsCount })
+      .update({ nb_likes: newLikesCount })
       .eq('id', gistId);
     
-    return Response.json({ message: 'Gist已取消收藏', stars_count: newStarsCount }, { status: 200 });
+    return Response.json({ message: 'Gist已取消收藏', nb_likes: newLikesCount }, { status: 200 });
   } catch (error) {
     console.error('取消收藏Gist时出错:', error);
     return Response.json({ error: '服务器错误' }, { status: 500 });
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const supabase = getSupabaseClient();
     
     const { data, error } = await supabase
-      .from('gist_stars')
+      .from('likes')
       .select('*')
       .match({ user_id: userId, gist_id: gistId });
     

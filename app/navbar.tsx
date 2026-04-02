@@ -9,6 +9,7 @@ export default function Navbar() {
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ export default function Navbar() {
         setUserName(user.name || '');
         setUserEmail(user.email || '');
         setUserAvatar(user.avatar_url || null);
+        setIsAdmin(user.is_admin || false);
       } catch (e) {
         console.error('解析用户信息失败:', e);
         localStorage.removeItem('userToken');
@@ -38,6 +40,7 @@ export default function Navbar() {
       setUserName('');
       setUserEmail('');
       setUserAvatar(null);
+      setIsAdmin(false);
     }
   }, [pathname]);
 
@@ -91,19 +94,19 @@ export default function Navbar() {
                 href="/" 
                 className={`nav-link ${pathname === '/' ? 'active' : ''}`}
               >
-                All
+                全部
               </a>
               <a 
                 href="/discover" 
                 className={`nav-link ${pathname === '/discover' ? 'active' : ''}`}
               >
-                Discover
+                发现
               </a>
               <a 
                 href="/create" 
                 className="nav-link"
               >
-                New
+                新建
               </a>
             </nav>
           </div>
@@ -119,7 +122,7 @@ export default function Navbar() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Code search"
+                  placeholder="搜索代码..."
                   className="search-input"
                   style={{ paddingLeft: '32px' }}
                 />
@@ -128,7 +131,7 @@ export default function Navbar() {
             
             {!isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <a href="/login" className="nav-link">Sign in</a>
+                <a href="/login" className="nav-link">登录</a>
                 <ThemeToggle />
               </div>
             ) : (
@@ -158,14 +161,39 @@ export default function Navbar() {
                         className="block px-3 py-2 text-sm"
                         style={{ color: 'var(--color-text-main)' }}
                       >
-                        Profile
+                        个人资料
                       </a>
+                      <a 
+                        href="/settings" 
+                        className="block px-3 py-2 text-sm"
+                        style={{ color: 'var(--color-text-main)' }}
+                      >
+                        设置
+                      </a>
+                      {isAdmin && (
+                        <>
+                          <a 
+                            href="/admin/invitations" 
+                            className="block px-3 py-2 text-sm"
+                            style={{ color: 'var(--color-text-main)' }}
+                          >
+                            邀请码管理
+                          </a>
+                          <a 
+                            href="/admin/settings" 
+                            className="block px-3 py-2 text-sm"
+                            style={{ color: 'var(--color-text-main)' }}
+                          >
+                            管理员设置
+                          </a>
+                        </>
+                      )}
                       <button 
                         onClick={handleLogout}
                         className="w-full text-left px-3 py-2 text-sm"
                         style={{ color: 'var(--color-danger)' }}
                       >
-                        Sign out
+                        退出登录
                       </button>
                     </div>
                   )}

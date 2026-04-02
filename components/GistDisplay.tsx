@@ -13,13 +13,23 @@ interface File {
 
 interface Gist {
   id: string;
+  uuid: string;
   title?: string;
   description?: string;
+  url?: string;
+  url_normalized?: string;
+  preview?: string;
+  preview_filename?: string;
+  preview_mime_type?: string;
   topics?: string[];
+  languages?: string[];
   created_at: string;
   updated_at: string;
   files: File[];
-  forked_from?: string;
+  forked_id?: string;
+  nb_files?: number;
+  nb_likes?: number;
+  nb_forks?: number;
   user?: {
     id: string;
     name: string;
@@ -84,13 +94,32 @@ export default function GistDisplay({ gist }: { gist: Gist }) {
         </div>
       )}
 
+      {/* 编程语言标签 */}
+      {gist.languages && gist.languages.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-secondary)' }}>
+          {gist.languages.map(language => (
+            <Link
+              key={language}
+              href={`/discover?language=${encodeURIComponent(language)}`}
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors hover:opacity-80"
+              style={{ backgroundColor: '#3B82F6', color: 'white' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {language}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* Fork 来源提示 */}
-      {gist.forked_from && (
+      {gist.forked_id && (
         <div className="px-4 py-2 border-b text-sm" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)' }}>
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
-          Forked from <Link href={`/gists/${gist.forked_from}`} className="font-medium hover:underline" style={{ color: 'var(--color-primary)' }}>another gist</Link>
+          Forked from <Link href={`/gists/${gist.forked_id}`} className="font-medium hover:underline" style={{ color: 'var(--color-primary)' }}>another gist</Link>
         </div>
       )}
 

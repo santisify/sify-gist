@@ -31,8 +31,8 @@ export async function GET(
       return new NextResponse('Gist not found', { status: 404 });
     }
 
-    // 只允许公开和未列出的 Gist 被嵌入
-    if (gist.visibility === 'private') {
+    // 只允许公开和未列出的 Gist 被嵌入 (0=public, 1=unlisted, 2=private)
+    if (gist.visibility === 2) {
       return new NextResponse('This gist is private', { status: 403 });
     }
 

@@ -7,11 +7,11 @@ type EmbedTheme = 'auto' | 'light' | 'dark';
 interface GistActionsProps {
   gistId: string;
   gistUserId?: string;
-  starsCount?: number;
-  forksCount?: number;
+  nbLikes?: number;
+  nbForks?: number;
 }
 
-export default function GistActions({ gistId, gistUserId, starsCount = 0, forksCount = 0 }: GistActionsProps) {
+export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks = 0 }: GistActionsProps) {
   const [isStarred, setIsStarred] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showEmbed, setShowEmbed] = useState(false);

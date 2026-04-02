@@ -197,13 +197,13 @@ function ProfileContent() {
 
   function getVisibilityBadge(visibility: Visibility) {
     switch (visibility) {
-      case 'private':
+      case 2: // private
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
             私有
           </span>
         );
-      case 'unlisted':
+      case 1: // unlisted
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
             未列出

@@ -4,7 +4,7 @@ import { generateTokenPair } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, invitationCode } = await request.json();
 
     if (!name || !email || !password) {
       return new Response(JSON.stringify({ error: '姓名、邮箱和密码不能为空' }), {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const user = await registerUser({ name, email, password });
+    const user = await registerUser({ name, email, password }, invitationCode);
 
     if (!user) {
       return new Response(JSON.stringify({ error: '注册失败' }), {
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
-        avatar_url: user.avatar_url
+        avatar_url: user.avatar_url,
+        is_admin: user.is_admin,
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -69,9 +70,9 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('注册错误:', error);
-    return new Response(JSON.stringify({ error: '注册时发生错误' }), {
+    return new Response(JSON.stringify({ error: error.message || '注册时发生错误' }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
