@@ -5,3 +5,4 @@ package-lock.json
 test-db.js
 vercel.json
 .idea
+.vscode
