@@ -149,6 +149,11 @@ export default function HomePageClient() {
     return count === 1 ? '1 file' : `${count} files`;
   }
 
+  function getPreviewLines(content: string, maxLines: number): string {
+    const lines = content.split('\n').slice(0, maxLines);
+    return lines.join('\n');
+  }
+
   function getVisibilityBadge(visibility: string) {
     switch (visibility) {
       case 'private':
@@ -254,67 +259,84 @@ export default function HomePageClient() {
       ) : (
         <div className="card">
           {result?.data.map((gist) => (
-            <Link 
-              key={gist.id} 
-              href={`/gists/${gist.id}`}
-              className="gist-item"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
-                  <span className="gist-item-title">{gist.title || 'Untitled'}</span>
-                  {getVisibilityBadge(gist.visibility)}
+            <div key={gist.id} className="gist-item-wrapper">
+              <Link
+                href={`/gists/${gist.id}`}
+                className="gist-item"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <span className="gist-item-title">{gist.title || 'Untitled'}</span>
+                    {getVisibilityBadge(gist.visibility)}
+                  </div>
+                  {gist.description && (
+                    <p className="gist-item-desc truncate">
+                      {gist.description}
+                    </p>
+                  )}
+                  <div className="gist-item-meta flex items-center gap-4 mt-2">
+                    {/* 用户信息 */}
+                    {gist.user && (
+                      <span className="flex items-center gap-1.5">
+                        {gist.user.avatar_url ? (
+                          <img src={gist.user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                            {gist.user.name?.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span>{gist.user.name}</span>
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {getFileCount(gist.files)}
+                    </span>
+                    <span>Last active {getTimeAgo(gist.updated_at)}</span>
+                  </div>
                 </div>
-                {gist.description && (
-                  <p className="gist-item-desc truncate">
-                    {gist.description}
-                  </p>
-                )}
-                <div className="gist-item-meta flex items-center gap-4 mt-2">
-                  {/* 用户信息 */}
-                  {gist.user && (
-                    <span className="flex items-center gap-1.5">
-                      {gist.user.avatar_url ? (
-                        <img src={gist.user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                          {gist.user.name?.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span>{gist.user.name}</span>
+
+                {/* 文件标签 */}
+                <div className="flex items-center gap-2 ml-4">
+                  {gist.files.slice(0, 3).map((file, index) => (
+                    <span
+                      key={index}
+                      className="badge"
+                    >
+                      {file.filename}
+                    </span>
+                  ))}
+                  {gist.files.length > 3 && (
+                    <span className="badge">
+                      +{gist.files.length - 3}
                     </span>
                   )}
-                  <span className="flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {getFileCount(gist.files)}
-                  </span>
-                  <span>Last active {getTimeAgo(gist.updated_at)}</span>
                 </div>
-              </div>
-              
-              {/* 文件标签 */}
-              <div className="flex items-center gap-2 ml-4">
-                {gist.files.slice(0, 3).map((file, index) => (
-                  <span 
-                    key={index}
-                    className="badge"
-                  >
-                    {file.filename}
-                  </span>
-                ))}
-                {gist.files.length > 3 && (
-                  <span className="badge">
-                    +{gist.files.length - 3}
-                  </span>
-                )}
-              </div>
-            </Link>
+              </Link>
+
+              {/* 代码预览 */}
+              {gist.files.length > 0 && gist.files[0].content && (
+                <div
+                  className="gist-preview cursor-pointer"
+                  onClick={() => router.push(`/gists/${gist.id}`)}
+                >
+                  <div className="gist-preview-header">
+                    <span className="gist-preview-filename">{gist.files[0].filename}</span>
+                    <span className="gist-preview-lang">{gist.files[0].language}</span>
+                  </div>
+                  <pre className="gist-preview-code">
+                    <code>{getPreviewLines(gist.files[0].content, 10)}</code>
+                  </pre>
+                </div>
+              )}
+            </div>
           ))}
-          
+
           {/* 分页 */}
           {result && result.totalPages > 1 && (
             <Pagination

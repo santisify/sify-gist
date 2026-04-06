@@ -759,3 +759,65 @@ html.dark .markdown-preview .md-inline-code {
 html.dark {
   --color-bg-secondary: #161b22;
 }
+
+/* Gist 列表项包装器 */
+.gist-item-wrapper {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gist-item-wrapper:last-child {
+  border-bottom: none;
+}
+
+/* Gist 代码预览 */
+.gist-preview {
+  background-color: var(--color-bg-code);
+  border-top: 1px solid var(--color-border);
+  margin: 0 16px 16px 16px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.gist-preview:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.gist-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-bg-nav);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gist-preview-filename {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-link);
+}
+
+.gist-preview-lang {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 2px 6px;
+  background-color: var(--color-bg-code);
+  border-radius: 4px;
+}
+
+.gist-preview-code {
+  margin: 0;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  max-height: 200px;
+  color: var(--color-text-main);
+}
+
+.gist-preview-code code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+}
