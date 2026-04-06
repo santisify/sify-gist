@@ -7,3 +7,4 @@ vercel.json
 .idea
 .vscode
 tsconfig.tsbuildinfo
+/CLAUDE.md

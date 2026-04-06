@@ -87,9 +87,12 @@ export const CacheKeys = {
   popularTopics: (limit: number) => 
     `topics:popular:${limit}`,
   
-  popularLanguages: (limit: number) => 
+  popularLanguages: (limit: number) =>
     `languages:popular:${limit}`,
-  
+
+  trendingGists: (page: number, limit: number, days?: number) =>
+    `gists:trending:${page}:${limit}:${days || 30}`,
+
   userById: (userId: string) => 
     `user:${userId}`,
   

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Visibility, Gist } from '@/lib/gists';
 
+type TabType = 'latest' | 'trending';
+
 interface DiscoverClientProps {
   initialTopic?: string;
 }
@@ -15,6 +17,7 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(initialTopic || null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<TabType>('latest');
 
   // 获取热门标签
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
         console.error('获取标签失败:', error);
       }
     };
-    
+
     fetchTopics();
   }, []);
 
@@ -42,12 +45,17 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
           page: page.toString(),
           limit: '12'
         });
-        
+
         if (selectedTopic) {
           params.set('topic', selectedTopic);
         }
-        
-        const response = await fetch(`/api/gists?${params}`);
+
+        let url = '/api/gists';
+        if (activeTab === 'trending' && !selectedTopic) {
+          url = '/api/gists/trending';
+        }
+
+        const response = await fetch(`${url}?${params}`);
         if (response.ok) {
           const data = await response.json();
           setGists(data.data || []);
@@ -59,9 +67,9 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
         setLoading(false);
       }
     };
-    
+
     fetchGists();
-  }, [page, selectedTopic]);
+  }, [page, selectedTopic, activeTab]);
 
   const handleTopicClick = (topic: string) => {
     if (selectedTopic === topic) {
@@ -69,6 +77,11 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
     } else {
       setSelectedTopic(topic);
     }
+    setPage(1);
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
     setPage(1);
   };
 
@@ -82,6 +95,34 @@ export default function DiscoverClient({ initialTopic }: DiscoverClientProps) {
         <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
           浏览公开的代码片段，探索热门标签
         </p>
+      </div>
+
+      {/* 标签页切换 */}
+      <div className="mb-6 flex gap-2">
+        <button
+          onClick={() => handleTabChange('latest')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'latest' ? 'ring-2 ring-offset-1' : ''
+          }`}
+          style={{
+            backgroundColor: activeTab === 'latest' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+            color: activeTab === 'latest' ? 'white' : 'var(--color-text-main)',
+          }}
+        >
+          最新发布
+        </button>
+        <button
+          onClick={() => handleTabChange('trending')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'trending' ? 'ring-2 ring-offset-1' : ''
+          }`}
+          style={{
+            backgroundColor: activeTab === 'trending' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+            color: activeTab === 'trending' ? 'white' : 'var(--color-text-main)',
+          }}
+        >
+          热门趋势
+        </button>
       </div>
 
       {/* 热门标签 */}
@@ -273,7 +314,23 @@ function GistCard({ gist }: { gist: Gist }) {
               })}
             </span>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-              {gist.files.length} file{gist.files.length > 1 ? 's' : ''}
+              {(gist.nb_likes ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                  {gist.nb_likes}
+                </span>
+              )}
+              {(gist.nb_forks ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.518-.114-.938-.316-1.342m0 2.688a3 3 0 10-4.636-4.314 3 3 0 004.636 4.314zm0 0a3 3 0 104.636 4.314 3 3 0 00-4.636-4.314zm0 0a3 3 0 10-4.636-4.314 3 3 0 004.636 4.314zm9.316-4.688a3 3 0 10-4.636-4.314 3 3 0 004.636 4.314z" />
+                  </svg>
+                  {gist.nb_forks}
+                </span>
+              )}
+              <span>{gist.files.length} file{gist.files.length > 1 ? 's' : ''}</span>
             </div>
           </div>
         </div>

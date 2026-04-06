@@ -1426,23 +1426,141 @@ export async function getGistsByLanguage(
 // 获取热门编程语言
 export async function getPopularLanguages(limit: number = 20): Promise<{ language: string; count: number }[]> {
   const supabase = getSupabaseClient();
-  
+
   const { data, error } = await supabase
     .from('gist_languages')
     .select('language');
-  
+
   if (error || !data) {
     return [];
   }
-  
+
   const languageCounts = new Map<string, number>();
   for (const item of data) {
     const language = item.language as string;
     languageCounts.set(language, (languageCounts.get(language) || 0) + 1);
   }
-  
+
   return Array.from(languageCounts.entries())
     .map(([language, count]) => ({ language, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);
+}
+
+// 获取热门趋势 Gists
+// 热度公式: (nb_likes * 2 + nb_forks * 5) * 时间衰减因子
+// 时间衰减因子 = 1 / (1 + days_since_update)^gravity
+export async function getTrendingGists(
+  pagination: PaginationParams = { page: 1, limit: 10 },
+  options?: {
+    gravity?: number;      // 时间衰减引力参数，默认 1.8
+    daysLimit?: number;    // 只考虑最近 N 天内的 Gist，默认 30
+  }
+): Promise<PaginatedResult<Gist>> {
+  const { page, limit } = pagination;
+  const gravity = options?.gravity ?? 1.8;
+  const daysLimit = options?.daysLimit ?? 30;
+  const offset = (page - 1) * limit;
+  const supabase = getSupabaseClient();
+
+  // 计算时间范围
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - daysLimit);
+  const sinceISOString = sinceDate.toISOString();
+
+  // 获取时间范围内的公开 Gists
+  const { data: gistsData, error, count } = await supabase
+    .from('gists')
+    .select(`
+      id,
+      uuid,
+      user_id,
+      title,
+      description,
+      url,
+      preview,
+      preview_filename,
+      visibility,
+      nb_files,
+      nb_likes,
+      nb_forks,
+      created_at,
+      updated_at,
+      users!gists_user_id_fkey (
+        id,
+        name,
+        avatar_url
+      )
+    `, { count: 'exact' })
+    .eq('visibility', 0)
+    .gte('updated_at', sinceISOString)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('获取热门趋势 Gists 失败:', error);
+    throw error;
+  }
+
+  // 计算热度分数并排序
+  const now = Date.now();
+  const scoredGists = (gistsData || []).map(gist => {
+    const likes = (gist.nb_likes as number) || 0;
+    const forks = (gist.nb_forks as number) || 0;
+    const updatedAt = new Date(gist.updated_at as string).getTime();
+    const daysSinceUpdate = (now - updatedAt) / (1000 * 60 * 60 * 24);
+
+    // 热度公式: (likes * 2 + forks * 5) * 时间衰减
+    const baseScore = likes * 2 + forks * 5;
+    const timeDecay = Math.pow(1 + daysSinceUpdate, -gravity);
+    const trendingScore = baseScore * timeDecay;
+
+    return {
+      ...gist,
+      trendingScore
+    };
+  });
+
+  // 按热度分数排序
+  scoredGists.sort((a, b) => b.trendingScore - a.trendingScore);
+
+  // 分页
+  const total = scoredGists.length;
+  const paginatedGists = scoredGists.slice(offset, offset + limit);
+  const gistIds = paginatedGists.map(g => g.id as string);
+
+  // 批量获取文件、标签和编程语言
+  const [filesMap, topicsMap, languagesMap] = await Promise.all([
+    batchGetFiles(gistIds),
+    batchGetTopics(gistIds),
+    batchGetLanguages(gistIds),
+  ]);
+
+  const gists: Gist[] = paginatedGists.map(gistData => ({
+    id: gistData.id as string,
+    uuid: gistData.uuid as string,
+    user_id: gistData.user_id as string,
+    title: gistData.title as string,
+    description: gistData.description as string,
+    url: gistData.url as string,
+    preview: gistData.preview as string,
+    preview_filename: gistData.preview_filename as string,
+    visibility: (gistData.visibility as Visibility) || 0,
+    nb_files: (gistData.nb_files as number) || 0,
+    nb_likes: (gistData.nb_likes as number) || 0,
+    nb_forks: (gistData.nb_forks as number) || 0,
+    topics: topicsMap.get(gistData.id as string) || [],
+    languages: languagesMap.get(gistData.id as string) || [],
+    created_at: gistData.created_at as string,
+    updated_at: gistData.updated_at as string,
+    files: filesMap.get(gistData.id as string) || [],
+    user: gistData.users as any,
+  }));
+
+  return {
+    data: gists,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
