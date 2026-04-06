@@ -151,9 +151,21 @@ export default function HomePageClient() {
     return count === 1 ? '1 file' : `${count} files`;
   }
 
-  function getPreviewLines(content: string, maxLines: number): string {
-    const lines = content.split('\n').slice(0, maxLines);
-    return lines.join('\n');
+  function getPreviewLines(content: string, maxLines: number): { content: string; truncated: boolean; totalLines: number } {
+    const lines = content.split('\n');
+    const totalLines = lines.length;
+    if (totalLines > maxLines) {
+      return {
+        content: lines.slice(0, maxLines).join('\n'),
+        truncated: true,
+        totalLines
+      };
+    }
+    return {
+      content,
+      truncated: false,
+      totalLines
+    };
   }
 
   function getVisibilityBadge(visibility: string) {
@@ -363,7 +375,7 @@ function GistCard({
   router: ReturnType<typeof useRouter>;
   getTimeAgo: (dateStr: string) => string;
   getFileCount: (files: GistFile[]) => string;
-  getPreviewLines: (content: string, maxLines: number) => string;
+  getPreviewLines: (content: string, maxLines: number) => { content: string; truncated: boolean; totalLines: number };
   getVisibilityBadge: (visibility: string) => React.ReactNode;
 }) {
   const firstFile = gist.files[0];
@@ -378,6 +390,9 @@ function GistCard({
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
+
+  // 获取预览内容
+  const preview = firstFile?.content ? getPreviewLines(firstFile.content, 10) : null;
 
   return (
     <div className="gist-card">
@@ -418,7 +433,7 @@ function GistCard({
       </div>
 
       {/* 代码预览 */}
-      {firstFile && firstFile.content && (
+      {preview && (
         <div
           className="gist-card-preview cursor-pointer"
           onClick={() => router.push(`/gists/${gist.id}`)}
@@ -460,8 +475,14 @@ function GistCard({
                 userSelect: 'none',
               }}
             >
-              {getPreviewLines(firstFile.content, 10)}
+              {preview.content}
             </SyntaxHighlighter>
+            {preview.truncated && (
+              <div className="gist-card-preview-more">
+                <span>显示前 10 行，共 {preview.totalLines} 行</span>
+                <span className="gist-card-preview-more-link">查看完整代码 →</span>
+              </div>
+            )}
           </div>
         </div>
       )}

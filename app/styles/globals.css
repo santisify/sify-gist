@@ -901,10 +901,25 @@ html.dark .gist-card:hover {
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   font-size: 13px;
   line-height: 1.6;
-  overflow-x: auto;
-  max-height: 200px;
+  overflow: hidden;
   color: var(--color-text-main);
   background-color: var(--color-bg-code);
+}
+
+.gist-card-preview-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  margin-top: 8px;
+  border-top: 1px dashed var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.gist-card-preview-more-link {
+  color: var(--color-primary);
+  font-weight: 500;
 }
 
 .gist-card-preview-code code {

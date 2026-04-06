@@ -73,7 +73,7 @@ export default function RootLayout({
             </main>
             <footer className="border-t py-6" style={{ borderColor: 'var(--color-border)' }}>
               <div className="container-main text-center" style={{ color: 'var(--color-text-secondary)' }}>
-                <span className="text-sm">Powered by Sify Gist</span>
+                <span className="text-sm">Powered by santisify ⋅ <a href="https://santisify.top">站长博客</a></span>
               </div>
             </footer>
           </div>

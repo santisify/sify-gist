@@ -25,5 +25,5 @@ export async function initSupabaseTables() {
   // 注意：在实际项目中，您应该通过 Supabase 仪表板或迁移脚本创建这些表
   // 以下代码仅用于演示目的
 
-  console.log('Supabase 初始化完成');
+  // console.log('Supabase 初始化完成');
 }
