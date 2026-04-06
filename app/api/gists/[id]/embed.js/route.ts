@@ -52,7 +52,7 @@ export async function GET(
             <svg class="sify-gist-tab-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            ${escapeHtml(file.filename)}
+            ${escapeContent(file.filename)}
           </button>
         `).join('')}
       </div>
@@ -62,7 +62,7 @@ export async function GET(
     const filesHtml = gist.files.map((file, index) => `
       <div class="sify-gist-file ${hasMultipleFiles ? 'sify-gist-file-tabbed' : ''}" data-index="${index}" style="${hasMultipleFiles && index > 0 ? 'display: none;' : ''}">
         <div class="sify-gist-file-header">
-          <span class="sify-gist-filename">${escapeHtml(file.filename)}</span>
+          <span class="sify-gist-filename">${escapeContent(file.filename)}</span>
           <a class="sify-gist-raw-link" href="${baseUrl}/api/gists/${id}/raw/${encodeURIComponent(file.filename)}" target="_blank">view raw</a>
         </div>
         <div class="sify-gist-code">${generateCodeHtml(file.content, file.language)}</div>
@@ -70,11 +70,11 @@ export async function GET(
     `).join('');
 
     const topicsHtml = topics.length > 0 
-      ? `<div class="sify-gist-topics">${topics.map(t => `<span class="sify-gist-topic">${escapeHtml(t)}</span>`).join('')}</div>` 
+      ? `<div class="sify-gist-topics">${topics.map(t => `<span class="sify-gist-topic">${escapeContent(t)}</span>`).join('')}</div>` 
       : '';
 
     const descriptionHtml = gist.description 
-      ? `<div class="sify-gist-description">${escapeHtml(gist.description)}</div>` 
+      ? `<div class="sify-gist-description">${escapeContent(gist.description)}</div>` 
       : '';
 
     // 获取主题参数
@@ -662,9 +662,9 @@ export async function GET(
       }
     </style>
     <div class="sify-gist-header">
-      <a class="sify-gist-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeHtml(gist.title || 'Untitled')}</a>
+      <a class="sify-gist-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeContent(gist.title || 'Untitled')}</a>
       <div class="sify-gist-meta">
-        <a class="sify-gist-user" href="${baseUrl}/profile" target="_blank">${escapeHtml(gist.user?.name || 'Anonymous')}</a>
+        <a class="sify-gist-user" href="${baseUrl}/profile" target="_blank">${escapeContent(gist.user?.name || 'Anonymous')}</a>
         <span>·</span>
         <span>${formatDate(gist.created_at)}</span>
       </div>
@@ -736,6 +736,19 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// 转义 JavaScript 模板字符串中的特殊字符
+function escapeForJsTemplate(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')  // 转义反斜杠
+    .replace(/`/g, '\\`')     // 转义反引号
+    .replace(/\$/g, '\\$');   // 转义 $ 符号
+}
+
+// 统一的转义函数：先 HTML 转义，再 JS 模板字符串转义
+function escapeContent(str: string): string {
+  return escapeForJsTemplate(escapeHtml(str));
+}
+
 // 使用 Prism.js 高亮代码
 function highlightCode(code: string, language: string): string {
   // 获取实际语言
@@ -757,7 +770,9 @@ function highlightCode(code: string, language: string): string {
 // 生成带行号的代码 HTML
 function generateCodeHtml(code: string, language: string): string {
   const highlighted = highlightCode(code, language);
-  const lines = highlighted.split('\n');
+  // 转义模板字符串中的特殊字符
+  const escapedHighlighted = escapeForJsTemplate(highlighted);
+  const lines = escapedHighlighted.split('\n');
   const lineCount = lines.length;
   const lineNumberWidth = String(lineCount).length * 0.6 + 1;
   
