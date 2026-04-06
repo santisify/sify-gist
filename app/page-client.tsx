@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Pagination from '@/components/Pagination';
 
 interface GistFile {
@@ -257,95 +259,210 @@ export default function HomePageClient() {
           </div>
         </div>
       ) : (
-        <div className="card">
+        <div className="gist-cards-grid">
           {result?.data.map((gist) => (
-            <div key={gist.id} className="gist-item-wrapper">
-              <Link
-                href={`/gists/${gist.id}`}
-                className="gist-item"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    <span className="gist-item-title">{gist.title || 'Untitled'}</span>
-                    {getVisibilityBadge(gist.visibility)}
-                  </div>
-                  {gist.description && (
-                    <p className="gist-item-desc truncate">
-                      {gist.description}
-                    </p>
-                  )}
-                  <div className="gist-item-meta flex items-center gap-4 mt-2">
-                    {/* 用户信息 */}
-                    {gist.user && (
-                      <span className="flex items-center gap-1.5">
-                        {gist.user.avatar_url ? (
-                          <img src={gist.user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                            {gist.user.name?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span>{gist.user.name}</span>
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {getFileCount(gist.files)}
-                    </span>
-                    <span>Last active {getTimeAgo(gist.updated_at)}</span>
-                  </div>
-                </div>
-
-                {/* 文件标签 */}
-                <div className="flex items-center gap-2 ml-4">
-                  {gist.files.slice(0, 3).map((file, index) => (
-                    <span
-                      key={index}
-                      className="badge"
-                    >
-                      {file.filename}
-                    </span>
-                  ))}
-                  {gist.files.length > 3 && (
-                    <span className="badge">
-                      +{gist.files.length - 3}
-                    </span>
-                  )}
-                </div>
-              </Link>
-
-              {/* 代码预览 */}
-              {gist.files.length > 0 && gist.files[0].content && (
-                <div
-                  className="gist-preview cursor-pointer"
-                  onClick={() => router.push(`/gists/${gist.id}`)}
-                >
-                  <div className="gist-preview-header">
-                    <span className="gist-preview-filename">{gist.files[0].filename}</span>
-                    <span className="gist-preview-lang">{gist.files[0].language}</span>
-                  </div>
-                  <pre className="gist-preview-code">
-                    <code>{getPreviewLines(gist.files[0].content, 10)}</code>
-                  </pre>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* 分页 */}
-          {result && result.totalPages > 1 && (
-            <Pagination
-              currentPage={result.page}
-              totalPages={result.totalPages}
-              total={result.total}
-              onPageChange={handlePageChange}
+            <GistCard
+              key={gist.id}
+              gist={gist}
+              router={router}
+              getTimeAgo={getTimeAgo}
+              getFileCount={getFileCount}
+              getPreviewLines={getPreviewLines}
+              getVisibilityBadge={getVisibilityBadge}
             />
+          ))}
+        </div>
+      )}
+
+      {/* 分页 */}
+      {!isLoading && result && result.totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={result.page}
+            totalPages={result.totalPages}
+            total={result.total}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 语言颜色映射
+const languageColors: Record<string, string> = {
+  'JavaScript': 'lang-js',
+  'TypeScript': 'lang-ts',
+  'Python': 'lang-python',
+  'Ruby': 'lang-ruby',
+  'Java': 'lang-java',
+  'Go': 'lang-go',
+  'Rust': 'lang-rust',
+  'C': 'lang-c',
+  'C++': 'lang-cpp',
+  'PHP': 'lang-php',
+  'HTML': 'lang-html',
+  'CSS': 'lang-css',
+  'JSON': 'lang-json',
+  'Markdown': 'lang-markdown',
+  'Shell': 'lang-shell',
+  'Vue': 'lang-vue',
+  'Svelte': 'lang-svelte',
+  'Swift': 'lang-swift',
+  'Kotlin': 'lang-kotlin',
+  'SQL': 'lang-sql',
+  'YAML': 'lang-yaml',
+  'Dockerfile': 'lang-dockerfile',
+};
+
+// 语言名称映射到 SyntaxHighlighter 支持的格式
+const languageMap: Record<string, string> = {
+  'JavaScript': 'javascript',
+  'TypeScript': 'typescript',
+  'Python': 'python',
+  'Ruby': 'ruby',
+  'Java': 'java',
+  'Go': 'go',
+  'Rust': 'rust',
+  'C': 'c',
+  'C++': 'cpp',
+  'PHP': 'php',
+  'HTML': 'html',
+  'CSS': 'css',
+  'JSON': 'json',
+  'Markdown': 'markdown',
+  'Shell': 'bash',
+  'Vue': 'vue',
+  'Svelte': 'svelte',
+  'Swift': 'swift',
+  'Kotlin': 'kotlin',
+  'SQL': 'sql',
+  'YAML': 'yaml',
+  'Dockerfile': 'dockerfile',
+  'Text': 'text',
+};
+
+function getLanguageClass(language: string): string {
+  return languageColors[language] || '';
+}
+
+function getHighlightLanguage(language: string): string {
+  return languageMap[language] || 'text';
+}
+
+// Gist 卡片组件
+function GistCard({
+  gist,
+  router,
+  getTimeAgo,
+  getFileCount,
+  getPreviewLines,
+  getVisibilityBadge,
+}: {
+  gist: Gist;
+  router: ReturnType<typeof useRouter>;
+  getTimeAgo: (dateStr: string) => string;
+  getFileCount: (files: GistFile[]) => string;
+  getPreviewLines: (content: string, maxLines: number) => string;
+  getVisibilityBadge: (visibility: string) => React.ReactNode;
+}) {
+  const firstFile = gist.files[0];
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="gist-card">
+      {/* 卡片头部 */}
+      <Link href={`/gists/${gist.id}`} className="gist-card-header">
+        <div className="flex-1 min-w-0">
+          <div className="gist-card-title">
+            {gist.title || 'Untitled'}
+          </div>
+          {gist.description && (
+            <p className="gist-card-desc">{gist.description}</p>
           )}
+        </div>
+        {getVisibilityBadge(gist.visibility)}
+      </Link>
+
+      {/* 元信息 */}
+      <div className="gist-card-meta">
+        {gist.user && (
+          <span className="gist-card-user">
+            {gist.user.avatar_url ? (
+              <img src={gist.user.avatar_url} alt="" className="gist-card-user-avatar" />
+            ) : (
+              <div className="gist-card-user-avatar-placeholder">
+                {gist.user.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span>{gist.user.name}</span>
+          </span>
+        )}
+        <span className="gist-card-files">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {getFileCount(gist.files)}
+        </span>
+        <span className="gist-card-time">{getTimeAgo(gist.updated_at)}</span>
+      </div>
+
+      {/* 代码预览 */}
+      {firstFile && firstFile.content && (
+        <div
+          className="gist-card-preview cursor-pointer"
+          onClick={() => router.push(`/gists/${gist.id}`)}
+        >
+          <div className="gist-card-preview-header">
+            <span className="gist-card-preview-filename">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {firstFile.filename}
+            </span>
+            <span className={`lang-badge ${getLanguageClass(firstFile.language)}`}>
+              <span className="lang-badge-dot"></span>
+              {firstFile.language}
+            </span>
+          </div>
+          <div className="gist-card-preview-code">
+            <SyntaxHighlighter
+              language={getHighlightLanguage(firstFile.language)}
+              style={isDark ? oneDark : oneLight}
+              customStyle={{
+                margin: 0,
+                padding: 0,
+                background: 'transparent',
+                fontSize: '13px',
+                lineHeight: '1.6',
+              }}
+              codeTagProps={{
+                style: {
+                  fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                }
+              }}
+              showLineNumbers={true}
+              lineNumberStyle={{
+                minWidth: '2.5em',
+                paddingRight: '1em',
+                color: isDark ? '#6e7681' : '#9e9e9e',
+                textAlign: 'right',
+                userSelect: 'none',
+              }}
+            >
+              {getPreviewLines(firstFile.content, 10)}
+            </SyntaxHighlighter>
+          </div>
         </div>
       )}
     </div>

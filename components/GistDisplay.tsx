@@ -78,25 +78,6 @@ export default function GistDisplay({ gist }: { gist: Gist }) {
 
   return (
     <div className="card">
-      {/* 编程语言标签 */}
-      {gist.languages && gist.languages.length > 0 && (
-        <div className="flex flex-wrap gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-secondary)' }}>
-          {gist.languages.map(language => (
-            <Link
-              key={language}
-              href={`/discover?language=${encodeURIComponent(language)}`}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors hover:opacity-80"
-              style={{ backgroundColor: '#3B82F6', color: 'white' }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              {language}
-            </Link>
-          ))}
-        </div>
-      )}
-
       {/* Fork 来源提示 */}
       {gist.forked_id && (
         <div className="px-4 py-2 border-b text-sm" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)' }}>
