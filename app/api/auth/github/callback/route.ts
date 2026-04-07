@@ -10,7 +10,18 @@ export async function GET(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
 
   // 验证 state 防止 CSRF 攻击
-  if (!code || !state || state !== storedState) {
+  if (!code || !state) {
+    console.error('GitHub OAuth: Missing code or state');
+    return NextResponse.redirect(
+      new URL('/login?error=oauth_invalid', request.url)
+    );
+  }
+
+  if (state !== storedState) {
+    console.error('GitHub OAuth: State mismatch', {
+      requestState: state,
+      cookieState: storedState
+    });
     return NextResponse.redirect(
       new URL('/login?error=oauth_invalid', request.url)
     );
