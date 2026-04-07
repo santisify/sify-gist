@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
     // 设置 state cookie
     response.cookies.set('github_oauth_state', state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always use secure in production
+      sameSite: 'none', // Required for cross-origin OAuth
       maxAge: 600, // 10 分钟
       path: '/'
     });
@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
     // 设置 PKCE code verifier cookie
     response.cookies.set('github_oauth_code_verifier', codeVerifier, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always use secure in production
+      sameSite: 'none', // Required for cross-origin OAuth
       maxAge: 600, // 10 分钟
       path: '/'
     });

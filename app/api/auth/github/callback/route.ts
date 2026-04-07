@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
     // 设置认证 cookies（与登录/注册保持一致）
     response.cookies.set('userToken', tokens.accessToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: true,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: true,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
@@ -179,16 +179,16 @@ export async function GET(request: NextRequest) {
     // 清除 OAuth cookies
     response.cookies.set('github_oauth_state', '', {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 0,
       path: '/'
     });
 
     response.cookies.set('github_oauth_code_verifier', '', {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 0,
       path: '/'
     });
