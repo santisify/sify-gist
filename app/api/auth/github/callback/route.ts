@@ -4,6 +4,13 @@ import { generateTokenPair } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
   try {
+    // 调试日志
+    console.log('=== GitHub OAuth Callback Debug ===');
+    console.log('Request URL:', request.url);
+    console.log('All cookies present:', Object.keys(request.cookies));
+    console.log('Code verifier in cookie:', request.cookies.get('github_oauth_code_verifier') ? 'YES' : 'NO');
+    console.log('GitHub OAuth Callback - NODE_ENV:', process.env.NODE_ENV);
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
@@ -158,6 +165,10 @@ export async function GET(request: NextRequest) {
 
     // 创建重定向响应
     const response = NextResponse.redirect(callbackUrl.toString());
+
+    // 添加 CORS 头部
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Origin', baseUrl);
 
     // 设置认证 cookies（与登录/注册保持一致）
     response.cookies.set('userToken', tokens.accessToken, {

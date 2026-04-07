@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
     // 创建响应并设置安全 cookies
     const response = NextResponse.redirect(githubAuthUrl.toString());
 
+    // 添加 CORS 头部，确保跨域请求能携带凭证
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Origin', baseUrl);
+
     // 设置 state cookie
     response.cookies.set('github_oauth_state', state, {
       httpOnly: true,
