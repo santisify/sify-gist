@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const codeVerifier = request.cookies.get('github_oauth_code_verifier')?.value;
 
     const isProduction = process.env.NODE_ENV === 'production';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
     // 验证 state 防止 CSRF 攻击
     if (!code || !state) {
@@ -142,19 +144,20 @@ export async function GET(request: NextRequest) {
       name: user.name,
     });
 
-    // 创建响应对象 - 返回 JSON 让前端处理重定向
-    const response = NextResponse.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar_url: user.avatar_url
-      },
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn,
-      message: 'GitHub 登录成功'
-    });
+    // 构建前端回调 URL 并传递 token 参数
+    const callbackUrl = new URL(`${baseUrl}/login`);
+    callbackUrl.searchParams.set('github_success', 'true');
+    callbackUrl.searchParams.set('accessToken', tokens.accessToken);
+    callbackUrl.searchParams.set('refreshToken', tokens.refreshToken);
+    callbackUrl.searchParams.set('user', JSON.stringify({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar_url: user.avatar_url
+    }));
+
+    // 创建重定向响应
+    const response = NextResponse.redirect(callbackUrl.toString());
 
     // 设置认证 cookies（与登录/注册保持一致）
     response.cookies.set('userToken', tokens.accessToken, {

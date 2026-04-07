@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -9,9 +9,49 @@ export default function LoginPageClient() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+
+  useEffect(() => {
+    // 处理 GitHub OAuth 成功回调
+    const githubSuccess = searchParams.get('github_success');
+    if (githubSuccess === 'true') {
+      const accessToken = searchParams.get('accessToken');
+      const refreshToken = searchParams.get('refreshToken');
+      const userStr = searchParams.get('user');
+
+      if (accessToken && refreshToken && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+
+          // 保存认证信息
+          localStorage.setItem('userToken', accessToken);
+          localStorage.setItem('refreshToken', refreshToken);
+          localStorage.setItem('userInfo', JSON.stringify(user));
+
+          // 显示成功消息并延迟跳转
+          setSuccessMessage('GitHub 登录成功！正在跳转...');
+
+          // 清理 URL 参数并跳转到目标页面
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('github_success');
+          cleanUrl.searchParams.delete('accessToken');
+          cleanUrl.searchParams.delete('refreshToken');
+          cleanUrl.searchParams.delete('user');
+
+          setTimeout(() => {
+            router.push(redirect || '/');
+            router.refresh();
+          }, 1500);
+        } catch (err) {
+          console.error('处理 GitHub OAuth 成功数据时出错:', err);
+          setError('登录数据处理失败');
+        }
+      }
+    }
+  }, [searchParams, redirect, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +118,12 @@ export default function LoginPageClient() {
             {error && (
               <div className="alert alert-danger mb-4">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="alert alert-success mb-4">
+                {successMessage}
               </div>
             )}
 

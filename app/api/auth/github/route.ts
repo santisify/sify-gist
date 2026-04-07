@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
     // 生成随机 state 用于防止 CSRF 攻击
     const state = crypto.randomBytes(32).toString('hex');
 
-    // 构建 GitHub OAuth URL - 重定向到前端回调页面
+    // 构建 GitHub OAuth URL - 重定向到后端 API 回调端点
     const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
     githubAuthUrl.searchParams.set('client_id', clientId);
-    githubAuthUrl.searchParams.set('redirect_uri', `${baseUrl}/github/callback`);
+    githubAuthUrl.searchParams.set('redirect_uri', `${baseUrl}/api/auth/github/callback`);
     githubAuthUrl.searchParams.set('scope', 'read:user user:email');
     githubAuthUrl.searchParams.set('state', state);
     githubAuthUrl.searchParams.set('code_challenge', codeChallenge);
