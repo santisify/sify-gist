@@ -23,14 +23,17 @@ export async function GET(request: NextRequest) {
   githubAuthUrl.searchParams.set('scope', 'read:user user:email');
   githubAuthUrl.searchParams.set('state', state);
 
-  // 设置 state cookie
+  // 设置 state cookie - 在 Vercel 上使用 lax 而不是 strict
   const isProduction = process.env.NODE_ENV === 'production';
   const response = NextResponse.redirect(githubAuthUrl.toString());
+
+  // 修复 cookie 设置，确保在 Vercel 上正常工作
   response.cookies.set('github_oauth_state', state, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
-    maxAge: 600 // 10 分钟
+    sameSite: 'lax', // 在 Vercel 上使用 lax 以允许跨域 cookie
+    maxAge: 600, // 10 分钟
+    path: '/'
   });
 
   return response;

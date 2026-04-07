@@ -9,6 +9,16 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get('github_oauth_state')?.value;
   const isProduction = process.env.NODE_ENV === 'production';
 
+  console.log('GitHub OAuth Callback Debug:', {
+    hasCode: !!code,
+    hasState: !!state,
+    cookieState: storedState,
+    requestState: state,
+    match: state === storedState,
+    url: request.url,
+    headers: Object.fromEntries(request.headers.entries())
+  });
+
   // 验证 state 防止 CSRF 攻击
   if (!code || !state) {
     console.error('GitHub OAuth: Missing code or state');
@@ -161,7 +171,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set('github_oauth_state', '', {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: 'lax',
       maxAge: 0,
       path: '/'
     });
