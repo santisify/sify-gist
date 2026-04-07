@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const storedState = request.cookies.get('github_oauth_state')?.value;
+  const isProduction = process.env.NODE_ENV === 'production';
 
   // 验证 state 防止 CSRF 攻击
   if (!code || !state || state !== storedState) {
