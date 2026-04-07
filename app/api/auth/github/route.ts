@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL 
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')}/api/auth/github/callback`;
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')}/api/auth/github/callback`;
   
   if (!clientId) {
     return NextResponse.json(
@@ -23,11 +23,12 @@ export async function GET(request: NextRequest) {
   githubAuthUrl.searchParams.set('state', state);
 
   // 设置 state cookie
+  const isProduction = process.env.NODE_ENV === 'production';
   const response = NextResponse.redirect(githubAuthUrl.toString());
   response.cookies.set('github_oauth_state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
     maxAge: 600 // 10 分钟
   });
 

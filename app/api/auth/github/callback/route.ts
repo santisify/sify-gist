@@ -146,7 +146,13 @@ export async function GET(request: NextRequest) {
     });
 
     // 清除 OAuth state cookie
-    response.cookies.delete('github_oauth_state');
+    response.cookies.set('github_oauth_state', '', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 0,
+      path: '/'
+    });
 
     return response;
   } catch (error) {
