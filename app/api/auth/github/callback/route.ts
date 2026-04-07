@@ -2,14 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findOrCreateUserByGitHub } from '@/lib/auth';
 import { generateTokenPair } from '@/lib/jwt';
 
+export async function OPTIONS(request: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+  const response = new NextResponse(null, { status: 204 });
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Origin', baseUrl);
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 调试日志
     console.log('=== GitHub OAuth Callback Debug ===');
     console.log('Request URL:', request.url);
-    console.log('All cookies present:', Object.keys(request.cookies));
-    console.log('Code verifier in cookie:', request.cookies.get('github_oauth_code_verifier') ? 'YES' : 'NO');
-    console.log('GitHub OAuth Callback - NODE_ENV:', process.env.NODE_ENV);
+    console.log('Host:', request.headers.get('host'));
+    console.log('Origin:', request.headers.get('origin'));
+    console.log('Referrer:', request.headers.get('referer'));
+    console.log('Cookie header:', request.headers.get('cookie'));
+    console.log('All cookies from request.cookies:', Object.keys(request.cookies));
+    console.log('Code verifier from cookie:', request.cookies.get('github_oauth_code_verifier') ? 'PRESENT' : 'MISSING');
+    console.log('Stored state from cookie:', request.cookies.get('github_oauth_state') ? 'PRESENT' : 'MISSING');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('===================================');
 
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
+export async function OPTIONS(request: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+  const response = new NextResponse(null, { status: 204 });
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Origin', baseUrl);
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const clientId = process.env.GITHUB_CLIENT_ID;
@@ -42,6 +54,8 @@ export async function GET(request: NextRequest) {
     // 添加 CORS 头部，确保跨域请求能携带凭证
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Origin', baseUrl);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     // 设置 state cookie
     response.cookies.set('github_oauth_state', state, {
