@@ -103,27 +103,34 @@ export async function GET(
         color: #24292f;
         background-color: #ffffff;
         border: 1px solid #d0d7de;
-        border-radius: 6px;
+        border-radius: 8px;
         margin: 16px 0;
         overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s ease;
+      }
+      .sify-gist-container:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       }
       .sify-gist-header {
-        padding: 12px 16px;
+        padding: 14px 18px;
         background-color: #f6f8fa;
         border-bottom: 1px solid #d0d7de;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 12px;
       }
       .sify-gist-title {
         font-weight: 600;
         color: #0969da;
         text-decoration: none;
         font-size: 15px;
+        transition: color 0.2s ease;
       }
       .sify-gist-title:hover {
+        color: #0550ae;
         text-decoration: underline;
       }
       .sify-gist-meta {
@@ -136,32 +143,39 @@ export async function GET(
       .sify-gist-user {
         color: #57606a;
         text-decoration: none;
+        transition: color 0.2s ease;
       }
       .sify-gist-user:hover {
         color: #0969da;
       }
       .sify-gist-description {
-        padding: 12px 16px;
+        padding: 12px 18px;
         color: #57606a;
         font-size: 13px;
         border-bottom: 1px solid #d0d7de;
+        line-height: 1.4;
       }
       .sify-gist-topics {
-        padding: 8px 16px;
+        padding: 10px 18px;
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 6px;
         background-color: #f6f8fa;
         border-bottom: 1px solid #d0d7de;
       }
       .sify-gist-topic {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 3px 10px;
         font-size: 12px;
         color: #0969da;
         background-color: #ddf4ff;
         border-radius: 12px;
         text-decoration: none;
+        transition: all 0.2s ease;
+      }
+      .sify-gist-topic:hover {
+        background-color: #cce7ff;
+        transform: translateY(-1px);
       }
       .sify-gist-tabs {
         display: flex;
@@ -174,16 +188,17 @@ export async function GET(
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 10px 16px;
+        padding: 12px 18px;
         font-size: 13px;
         font-weight: 500;
         color: #57606a;
         background: none;
         border: none;
-        border-bottom: 2px solid transparent;
+        border-bottom: 3px solid transparent;
         cursor: pointer;
         white-space: nowrap;
-        transition: all 0.15s ease;
+        transition: all 0.2s ease;
+        position: relative;
       }
       .sify-gist-tab:hover {
         color: #24292f;
@@ -192,6 +207,7 @@ export async function GET(
       .sify-gist-tab.active {
         color: #24292f;
         border-bottom-color: #0969da;
+        font-weight: 600;
       }
       .sify-gist-tab-icon {
         width: 14px;
@@ -208,7 +224,7 @@ export async function GET(
         border-bottom: none;
       }
       .sify-gist-file-header {
-        padding: 8px 16px;
+        padding: 10px 18px;
         background-color: #f6f8fa;
         border-bottom: 1px solid #d0d7de;
         display: flex;
@@ -218,14 +234,30 @@ export async function GET(
       .sify-gist-filename {
         font-weight: 600;
         color: #24292f;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sify-gist-filename::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2357606a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' /%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
       }
       .sify-gist-raw-link {
         font-size: 12px;
         color: #57606a;
         text-decoration: none;
+        transition: color 0.2s ease;
+        padding: 2px 6px;
+        border-radius: 4px;
       }
       .sify-gist-raw-link:hover {
         color: #0969da;
+        background-color: #e6f3ff;
       }
       .sify-gist-code {
         margin: 0;
@@ -243,6 +275,10 @@ export async function GET(
       }
       .sify-gist-line {
         height: 20px;
+        transition: background-color 0.1s ease;
+      }
+      .sify-gist-line:hover {
+        background-color: #f8f9fa;
       }
       .sify-gist-line-num {
         padding: 0 12px;
@@ -252,6 +288,8 @@ export async function GET(
         background-color: #f6f8fa;
         border-right: 1px solid #d0d7de;
         vertical-align: top;
+        position: sticky;
+        left: 0;
       }
       .sify-gist-line-code {
         padding: 0 16px;
@@ -291,7 +329,7 @@ export async function GET(
       .sify-gist-code .token.important,
       .sify-gist-code .token.variable { color: #e36209; }
       .sify-gist-footer {
-        padding: 8px 16px;
+        padding: 10px 18px;
         background-color: #f6f8fa;
         border-top: 1px solid #d0d7de;
         font-size: 12px;
@@ -303,6 +341,7 @@ export async function GET(
       .sify-gist-footer a {
         color: #57606a;
         text-decoration: none;
+        transition: color 0.2s ease;
       }
       .sify-gist-footer a:hover {
         color: #0969da;
@@ -314,6 +353,9 @@ export async function GET(
           color: #c9d1d9;
           background-color: #0d1117;
           border-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light):hover {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-header {
           background-color: #161b22;
@@ -342,6 +384,10 @@ export async function GET(
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topic {
           color: #58a6ff;
           background-color: #1f3a5f;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topic:hover {
+          background-color: #264269;
+          transform: translateY(-1px);
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tabs {
           background-color: #161b22;
@@ -376,6 +422,9 @@ export async function GET(
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-code {
           background-color: #0d1117;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-line:hover {
+          background-color: #161b22;
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-line-num {
           color: #484f58;
@@ -433,6 +482,9 @@ export async function GET(
         background-color: #0d1117 !important;
         border-color: #30363d !important;
       }
+      .sify-gist-theme-dark:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      }
       .sify-gist-theme-dark .sify-gist-header {
         background-color: #161b22 !important;
         border-bottom-color: #30363d !important;
@@ -460,6 +512,10 @@ export async function GET(
       .sify-gist-theme-dark .sify-gist-topic {
         color: #58a6ff !important;
         background-color: #1f3a5f !important;
+      }
+      .sify-gist-theme-dark .sify-gist-topic:hover {
+        background-color: #264269 !important;
+        transform: translateY(-1px) !important;
       }
       .sify-gist-theme-dark .sify-gist-tabs {
         background-color: #161b22 !important;
@@ -494,6 +550,9 @@ export async function GET(
       }
       .sify-gist-theme-dark .sify-gist-code {
         background-color: #0d1117 !important;
+      }
+      .sify-gist-theme-dark .sify-gist-line:hover {
+        background-color: #161b22 !important;
       }
       .sify-gist-theme-dark .sify-gist-line-num {
         color: #484f58 !important;

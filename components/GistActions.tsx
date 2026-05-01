@@ -237,7 +237,7 @@ export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks =
         <button
           onClick={handleStarToggle}
           disabled={loading}
-          className="btn btn-sm flex items-center gap-1"
+          className="btn btn-sm flex items-center gap-1 transition-all duration-200"
           style={isStarred ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : {}}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={isStarred ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
@@ -246,10 +246,10 @@ export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks =
           {isStarred ? 'Starred' : 'Star'}
         </button>
 
-        <button 
+        <button
           onClick={handleFork}
           disabled={loading || forking || gistUserId === currentUserId}
-          className="btn btn-sm flex items-center gap-1"
+          className="btn btn-sm flex items-center gap-1 transition-all duration-200"
           style={hasForked ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : {}}
           title={gistUserId === currentUserId ? '不能 fork 自己的 Gist' : hasForked ? '查看已 fork 的版本' : 'Fork 这个 Gist'}
         >
@@ -259,9 +259,9 @@ export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks =
           {forking ? 'Forking...' : hasForked ? 'Forked' : 'Fork'}
         </button>
 
-        <button 
+        <button
           onClick={() => setShowEmbed(true)}
-          className="btn btn-sm flex items-center gap-1"
+          className="btn btn-sm flex items-center gap-1 transition-all duration-200"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -273,7 +273,7 @@ export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks =
       {/* Embed Modal */}
       {showEmbed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="card w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="card w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" style={{ borderRadius: '12px' }}>
             <div className="card-header flex items-center justify-between flex-shrink-0">
               <h3 className="font-semibold">Embed this gist</h3>
               <button onClick={() => setShowEmbed(false)} className="btn btn-sm">
@@ -338,12 +338,13 @@ export default function GistActions({ gistId, gistUserId, nbLikes = 0, nbForks =
               <div>
                 <label className="form-label text-sm font-medium">Preview</label>
                 <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>This is how your embedded gist will look.</p>
-                <div 
+                <div
                   ref={previewRef}
-                  className="border rounded overflow-auto max-h-80"
-                  style={{ 
+                  className="border rounded-lg overflow-auto max-h-80"
+                  style={{
                     borderColor: 'var(--color-border)',
-                    backgroundColor: embedTheme === 'dark' ? '#0d1117' : embedTheme === 'light' ? '#ffffff' : undefined
+                    backgroundColor: embedTheme === 'dark' ? '#0d1117' : embedTheme === 'light' ? '#ffffff' : undefined,
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                   }}
                 >
                   <div className="p-4 text-sm italic" style={{ color: 'var(--color-text-muted)' }}>Loading preview...</div>
