@@ -77,10 +77,13 @@ export async function GET(
       ? `<div class="sify-gist-description">${escapeContent(gist.description)}</div>` 
       : '';
 
-    // 获取主题参数
+    // 获取主题参数和折叠参数
     const url = new URL(request.url);
     const themeParam = url.searchParams.get('theme');
-
+    const collapsibleParam = url.searchParams.get('collapsible');
+    const defaultCollapsedParam = url.searchParams.get('collapsed');
+    const isCollapsible = collapsibleParam === 'true';
+    const defaultCollapsed = defaultCollapsedParam === 'true';
     // 生成 JavaScript 代码
     const jsCode = `
 (function() {
@@ -92,7 +95,10 @@ export async function GET(
   
   var container = document.currentScript.parentElement;
   var gistContainer = document.createElement('div');
-  gistContainer.className = 'sify-gist-container' + (forcedTheme ? ' sify-gist-theme-' + forcedTheme : '');
+  var isCollapsible = ${isCollapsible};
+  var hasStoredState = localStorage.getItem('sify-gist-collapsed-' + ${JSON.stringify(id)}) !== null;
+  var isCollapsed = isCollapsible && (hasStoredState ? localStorage.getItem('sify-gist-collapsed-' + ${JSON.stringify(id)}) === 'true' : ${defaultCollapsed});
+  gistContainer.className = 'sify-gist-container' + (forcedTheme ? ' sify-gist-theme-' + forcedTheme : '') + (isCollapsible ? ' sify-gist-collapsible' : '') + (isCollapsed ? ' sify-gist-collapsed' : '');
   gistContainer.innerHTML = \`
     <style>
       /* Light theme (default) */
@@ -296,6 +302,47 @@ export async function GET(
         white-space: pre;
         vertical-align: top;
       }
+      /* Collapsible functionality */
+      .sify-gist-collapsible .sify-gist-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        margin-left: 8px;
+        font-size: 12px;
+        color: #57606a;
+        background: none;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .sify-gist-collapsible .sify-gist-toggle:hover {
+        background-color: #f3f4f6;
+        border-color: #b3b9c0;
+      }
+      .sify-gist-collapsible .sify-gist-toggle-icon {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.2s ease;
+      }
+      .sify-gist-collapsed .sify-gist-toggle-icon {
+        transform: rotate(-90deg);
+      }
+      .sify-gist-collapsible .sify-gist-content {
+        transition: max-height 0.5s ease, opacity 0.3s ease;
+        overflow: hidden;
+        max-height: 2000px;
+      }
+      .sify-gist-collapsed .sify-gist-content {
+        max-height: 0;
+        opacity: 0;
+      }
+      .sify-gist-collapsible:not(.sify-gist-collapsed) .sify-gist-content {
+        max-height: 2000px;
+        opacity: 1;
+      }
+
       /* Prism.js 主题 - 浅色 */
       .sify-gist-code .token.comment,
       .sify-gist-code .token.prolog,
@@ -372,6 +419,14 @@ export async function GET(
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-user:hover {
           color: #58a6ff;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-toggle {
+          color: #8b949e;
+          border-color: #30363d;
+        }
+        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-toggle:hover {
+          background-color: #21262d;
+          border-color: #50555a;
         }
         .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-description {
           color: #8b949e;
@@ -498,8 +553,13 @@ export async function GET(
       .sify-gist-theme-dark .sify-gist-user {
         color: #8b949e !important;
       }
-      .sify-gist-theme-dark .sify-gist-user:hover {
-        color: #58a6ff !important;
+      .sify-gist-theme-dark .sify-gist-toggle {
+        color: #8b949e !important;
+        border-color: #30363d !important;
+      }
+      .sify-gist-theme-dark .sify-gist-toggle:hover {
+        background-color: #21262d !important;
+        border-color: #50555a !important;
       }
       .sify-gist-theme-dark .sify-gist-description {
         color: #8b949e !important;
@@ -622,8 +682,13 @@ export async function GET(
       .sify-gist-theme-light .sify-gist-user {
         color: #57606a !important;
       }
-      .sify-gist-theme-light .sify-gist-user:hover {
-        color: #0969da !important;
+      .sify-gist-theme-light .sify-gist-toggle {
+        color: #57606a !important;
+        border-color: #d0d7de !important;
+      }
+      .sify-gist-theme-light .sify-gist-toggle:hover {
+        background-color: #f3f4f6 !important;
+        border-color: #b3b9c0 !important;
       }
       .sify-gist-theme-light .sify-gist-description {
         color: #57606a !important;
@@ -721,17 +786,27 @@ export async function GET(
       }
     </style>
     <div class="sify-gist-header">
-      <a class="sify-gist-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeContent(gist.title || 'Untitled')}</a>
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+        <a class="sify-gist-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeContent(gist.title || 'Untitled')}</a>
+        ${isCollapsible ? `<button class="sify-gist-toggle" onclick="toggleGist('${id}')" title="Toggle content">
+          <svg class="sify-gist-toggle-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+          <span class="sify-gist-toggle-text">Collapse</span>
+        </button>` : ''}
+      </div>
       <div class="sify-gist-meta">
         <a class="sify-gist-user" href="${baseUrl}/profile" target="_blank">${escapeContent(gist.user?.name || 'Anonymous')}</a>
         <span>·</span>
         <span>${formatDate(gist.created_at)}</span>
       </div>
     </div>
-    ${descriptionHtml}
-    ${topicsHtml}
-    ${tabsHtml}
-    <div class="sify-gist-files">${filesHtml}</div>
+    <div class="sify-gist-content">
+      ${descriptionHtml}
+      ${topicsHtml}
+      ${tabsHtml}
+      <div class="sify-gist-files">${filesHtml}</div>
+    </div>
     <div class="sify-gist-footer">
       <span>via <a href="${baseUrl}" target="_blank">Sify Gist</a></span>
       <a href="${baseUrl}/gists/${id}" target="_blank">View on Sify Gist</a>
@@ -748,18 +823,40 @@ export async function GET(
     document.currentScript.insertAdjacentElement('afterend', gistContainer);
   }
   
+  // 折叠/展开功能
+  window.toggleGist = function(gistId) {
+    var container = document.querySelector('.sify-gist-container');
+    if (container) {
+      var isCollapsed = container.classList.contains('sify-gist-collapsed');
+
+      if (isCollapsed) {
+        container.classList.remove('sify-gist-collapsed');
+        localStorage.removeItem('sify-gist-collapsed-' + gistId);
+      } else {
+        container.classList.add('sify-gist-collapsed');
+        localStorage.setItem('sify-gist-collapsed-' + gistId, 'true');
+      }
+
+      // 更新按钮文本
+      var toggleBtn = container.querySelector('.sify-gist-toggle-text');
+      if (toggleBtn) {
+        toggleBtn.textContent = isCollapsed ? 'Collapse' : 'Expand';
+      }
+    }
+  };
+
   // 标签页切换逻辑
   var tabs = gistContainer.querySelectorAll('.sify-gist-tab');
   var files = gistContainer.querySelectorAll('.sify-gist-file');
-  
+
   tabs.forEach(function(tab) {
     tab.addEventListener('click', function() {
       var index = this.getAttribute('data-index');
-      
+
       // 更新标签激活状态
       tabs.forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
-      
+
       // 切换文件显示
       files.forEach(function(file) {
         if (file.getAttribute('data-index') === index) {

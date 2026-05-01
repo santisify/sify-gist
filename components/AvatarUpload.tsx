@@ -8,7 +8,7 @@ interface AvatarUploadProps {
   onAvatarUpdate: (newAvatarUrl: string) => void;
 }
 
-export default function AvatarUpload({ userId, currentAvatar, onAvatarUpdate }: AvatarUploadProps) {
+export default ({userId, currentAvatar, onAvatarUpdate}: AvatarUploadProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentAvatar || null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function AvatarUpload({ userId, currentAvatar, onAvatarUpdate }: 
           )}
         </button>
       </div>
-      
+
       <input
         type="file"
         ref={fileInputRef}
@@ -88,13 +88,13 @@ export default function AvatarUpload({ userId, currentAvatar, onAvatarUpdate }: 
         accept="image/*"
         className="hidden"
       />
-      
+
       {uploadError && (
         <div className="mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md dark:bg-red-900/30 dark:text-red-300">
           {uploadError}
         </div>
       )}
-      
+
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
         支持 JPG, PNG, GIF, WEBP 格式，最大 2MB
       </p>
