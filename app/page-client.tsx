@@ -196,37 +196,44 @@ export default function HomePageClient() {
   return (
     <div className="container-main py-6">
       {/* 头部 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>
-            {debouncedQuery ? `搜索: "${debouncedQuery}"` : 'All gists'}
-          </h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold">
+              {debouncedQuery ? `搜索: "${debouncedQuery}"` : '代码片段库'}
+            </h1>
+          </div>
           {!isLoading && result && (
-            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              {result.total}
+            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm font-medium text-gray-600 dark:text-gray-400">
+              {result.total} 个结果
             </span>
           )}
         </div>
-        <button onClick={handleCreateClick} className="btn btn-primary btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button onClick={handleCreateClick} className="btn btn-primary group">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          New gist
+          <span className="font-medium">创建代码片段</span>
         </button>
       </div>
 
       {/* 搜索框 */}
-      <form onSubmit={handleSearch} className="mb-4">
-        <div className="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <form onSubmit={handleSearch} className="mb-8">
+        <div className="relative max-w-2xl mx-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索 Gists..."
-            className="w-full pl-10 pr-4 py-2 text-sm"
+            placeholder="搜索代码、文件名、描述..."
+            className="w-full pl-12 pr-12 py-4 text-base bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 shadow-sm hover:shadow-md"
           />
           {searchQuery && (
             <button
@@ -235,10 +242,9 @@ export default function HomePageClient() {
                 setSearchQuery('');
                 setDebouncedQuery('');
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:opacity-70"
-              style={{ color: 'var(--color-text-muted)' }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -248,27 +254,49 @@ export default function HomePageClient() {
 
       {/* 加载状态 */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="loading-spinner"></div>
+        <div className="flex justify-center items-center py-20">
+          <div className="relative">
+            <div className="loading-spinner"></div>
+            <div className="mt-4 text-center text-gray-500 dark:text-gray-400">加载中...</div>
+          </div>
         </div>
       ) : result?.data.length === 0 ? (
-        <div className="card">
-          <div className="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" className="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-16 text-center">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-2xl flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
-            <h3 className="empty-state-title">
-              {debouncedQuery ? '未找到匹配的 Gists' : 'No gists yet'}
-            </h3>
-            <p className="empty-state-desc">
-              {debouncedQuery ? '尝试其他搜索词' : 'Create your first gist to get started'}
-            </p>
-            {!debouncedQuery && (
-              <button onClick={handleCreateClick} className="btn btn-primary mt-4">
-                Create a gist
-              </button>
-            )}
           </div>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            {debouncedQuery ? '未找到匹配的代码片段' : '还没有代码片段'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
+            {debouncedQuery ? '尝试使用不同的关键词搜索，或者浏览发现页面查看更多代码片段' : '开始创建你的第一个代码片段，分享你的编程智慧和创意'}
+          </p>
+          {!debouncedQuery && (
+            <button onClick={handleCreateClick} className="btn btn-primary text-lg px-8 py-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              创建第一个代码片段
+            </button>
+          )}
+          {debouncedQuery && (
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setDebouncedQuery('');
+                }}
+                className="btn btn-outline"
+              >
+                清除搜索
+              </button>
+              <button onClick={handleCreateClick} className="btn btn-primary">
+                创建代码片段
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="gist-cards-grid">
@@ -397,9 +425,9 @@ function GistCard({
   return (
     <div className="gist-card">
       {/* 卡片头部 */}
-      <Link href={`/gists/${gist.id}`} className="gist-card-header">
+      <Link href={`/gists/${gist.id}`} className="gist-card-header block">
         <div className="flex-1 min-w-0">
-          <div className="gist-card-title">
+          <div className="gist-card-title group-hover:text-blue-600 transition-colors duration-300">
             {gist.title || 'Untitled'}
           </div>
           {gist.description && (
@@ -412,54 +440,54 @@ function GistCard({
       {/* 元信息 */}
       <div className="gist-card-meta">
         {gist.user && (
-          <span className="gist-card-user">
+          <span className="gist-card-user group">
             {gist.user.avatar_url ? (
-              <img src={gist.user.avatar_url} alt="" className="gist-card-user-avatar" />
+              <img src={gist.user.avatar_url} alt="" className="gist-card-user-avatar group-hover:ring-2 group-hover:ring-blue-400 transition-all" />
             ) : (
-              <div className="gist-card-user-avatar-placeholder">
+              <div className="gist-card-user-avatar-placeholder group-hover:scale-110 transition-transform">
                 {gist.user.name?.charAt(0).toUpperCase()}
               </div>
             )}
-            <span>{gist.user.name}</span>
+            <span className="group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">{gist.user.name}</span>
           </span>
         )}
-        <span className="gist-card-files">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <span className="gist-card-files group">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          {getFileCount(gist.files)}
+          <span className="group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">{getFileCount(gist.files)}</span>
         </span>
-        <span className="gist-card-time">{getTimeAgo(gist.updated_at)}</span>
+        <span className="gist-card-time group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors">{getTimeAgo(gist.updated_at)}</span>
       </div>
 
       {/* 代码预览 */}
       {preview && (
         <div
-          className="gist-card-preview cursor-pointer"
+          className="gist-card-preview cursor-pointer group/code"
           onClick={() => router.push(`/gists/${gist.id}`)}
         >
-          <div className="gist-card-preview-header">
-            <span className="gist-card-preview-filename">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="gist-card-preview-header group-hover/code:bg-gray-50 dark:group-hover/code:bg-gray-700/50 transition-colors">
+            <span className="gist-card-preview-filename group-hover/code:text-blue-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover/code:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               {firstFile.filename}
             </span>
-            <span className={`lang-badge ${getLanguageClass(firstFile.language)}`}>
+            <span className={`lang-badge ${getLanguageClass(firstFile.language)} group-hover/code:scale-105 transition-transform`}>
               <span className="lang-badge-dot"></span>
               {firstFile.language}
             </span>
           </div>
-          <div className="gist-card-preview-code">
+          <div className="gist-card-preview-code group-hover/code:bg-gray-50/50 dark:group-hover/code:bg-gray-800/50 transition-colors">
             <SyntaxHighlighter
               language={getHighlightLanguage(firstFile.language)}
               style={isDark ? oneDark : oneLight}
               customStyle={{
                 margin: 0,
-                padding: 0,
+                padding: '16px 20px',
                 background: 'transparent',
-                fontSize: '13px',
-                lineHeight: '1.6',
+                fontSize: '14px',
+                lineHeight: '1.7',
               }}
               codeTagProps={{
                 style: {
@@ -470,17 +498,18 @@ function GistCard({
               lineNumberStyle={{
                 minWidth: '2.5em',
                 paddingRight: '1em',
-                color: isDark ? '#6e7681' : '#9e9e9e',
+                color: isDark ? '#6e7681' : '#959da5',
                 textAlign: 'right',
                 userSelect: 'none',
+                fontSize: '12px',
               }}
             >
               {preview.content}
             </SyntaxHighlighter>
             {preview.truncated && (
-              <div className="gist-card-preview-more">
-                <span>显示前 10 行，共 {preview.totalLines} 行</span>
-                <span className="gist-card-preview-more-link">查看完整代码 →</span>
+              <div className="gist-card-preview-more group-hover/code:border-blue-200 dark:group-hover/code:border-blue-800 transition-colors">
+                <span className="group-hover/code:text-blue-600 transition-colors">显示前 10 行，共 {preview.totalLines} 行</span>
+                <span className="gist-card-preview-more-link group-hover/code:translate-x-1 transition-transform">查看完整代码 →</span>
               </div>
             )}
           </div>

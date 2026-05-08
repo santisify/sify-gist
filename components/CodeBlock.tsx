@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { useTheme } from '@/lib/theme-context';
+// 移除主题上下文依赖，改为使用 DOM 检查
 
 interface CodeBlockProps {
   code: string;
@@ -12,10 +12,23 @@ interface CodeBlockProps {
 }
 
 export default function CodeBlock({ code, language }: CodeBlockProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
   const [showPreview, setShowPreview] = useState(true);
-  
+
+  // 检查当前是否为暗色模式
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
+
   const style = isDark ? atomDark : oneLight;
   
   // 检测是否是 Markdown 或 CSV 文件
