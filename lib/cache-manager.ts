@@ -11,9 +11,3 @@ export function clearGistCache(gistId?: string) {
   // 皴力解决方案：直接清除所有缓存
   cache.clear();
 }
-
-// 清除用户相关的缓存
-export function clearUserCache(userId: string) {
-  // 暴力解决方案： 直接清除所有缓存
-  cache.clear();
-}

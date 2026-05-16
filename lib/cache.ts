@@ -96,9 +96,7 @@ export const CacheKeys = {
   userById: (userId: string) => 
     `user:${userId}`,
   
-  adminSettings: () => 
-    'admin:settings',
-};
+  };
 
 // 缓存装饰器
 export function withCache<T>(

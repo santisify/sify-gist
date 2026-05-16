@@ -167,18 +167,6 @@ export default function RegisterPageClient() {
                   placeholder="再次输入密码"
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">邀请码（可选）</label>
-                <input
-                  type="text"
-                  value={invitationCode}
-                  onChange={(e) => setInvitationCode(e.target.value)}
-                  className="form-input"
-                  placeholder="如有邀请码请输入"
-                />
-              </div>
-
               <button
                 type="submit"
                 disabled={isSubmitting}

@@ -4,7 +4,7 @@ import { generateTokenPair } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, invitationCode } = await request.json();
+    const { name, email, password } = await request.json();
 
     if (!name || !email || !password) {
       return new Response(JSON.stringify({ error: '姓名、邮箱和密码不能为空' }), {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const user = await registerUser({ name, email, password }, invitationCode);
+    const user = await registerUser({ name, email, password });
 
     if (!user) {
       return new Response(JSON.stringify({ error: '注册失败' }), {

@@ -76,27 +76,12 @@ export async function getUserById(id: string): Promise<User | null> {
   };
 }
 
-export async function registerUser(data: RegisterData, invitationCode?: string): Promise<User | null> {
-  // 检查是否禁用注册
-  const { isSignupDisabled } = await import('./admin-settings');
-  if (await isSignupDisabled()) {
-    throw new Error('注册已被禁用');
-  }
-
-  // 检查邀请码（如果需要）
-  const { isInvitationUsable, useInvitation } = await import('./invitations');
-  if (invitationCode) {
-    const usable = await isInvitationUsable(invitationCode);
-    if (!usable) {
-      throw new Error('邀请码无效或已过期');
-    }
-  }
-
+export async function registerUser(data: RegisterData): Promise<User | null> {
   const hashedPassword = await bcrypt.hash(data.password, 10);
   const id = nanoid(12);
   const now = new Date().toISOString();
   const usernameNormalized = data.name.toLowerCase();
-  
+
   try {
     const result = await insert('users', {
       id: id,
@@ -108,12 +93,7 @@ export async function registerUser(data: RegisterData, invitationCode?: string):
       is_admin: false,
       created_at: now
     });
-    
-    // 使用邀请码
-    if (invitationCode) {
-      await useInvitation(invitationCode);
-    }
-    
+
     if (result && Array.isArray(result) && result.length > 0) {
       return {
         id,
@@ -125,7 +105,7 @@ export async function registerUser(data: RegisterData, invitationCode?: string):
         created_at: now
       };
     }
-    
+
     const users = await select('users', { where: { id: id } });
     if (users && users.length > 0) {
       const user = users[0];
@@ -139,7 +119,7 @@ export async function registerUser(data: RegisterData, invitationCode?: string):
         created_at: user.created_at as string
       };
     }
-    
+
     return null;
   } catch (error: any) {
     if (error.code === '23505') {
