@@ -1,3 +1,4 @@
+本项目不再进行维护，推荐个人使用，毕竟supabase的免费额度只有512M
 # Sify Gist
 
 一个类似于 GitHub Gist 的代码片段分享平台，完全托管在 Vercel 上。
