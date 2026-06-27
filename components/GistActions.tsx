@@ -183,7 +183,7 @@ export default function GistActions({gistId, gistUserId, nbLikes = 0, nbForks = 
       script.src = `${origin}/api/gists/${gistId}/embed.js${themeParam}${collapsibleParam}${collapsedParam}`;
       script.onload = () => {
         // 脚本加载后，查找渲染的内容并移动到预览容器
-        const renderedGist = document.querySelector('.sify-gist-container');
+        const renderedGist = document.querySelector('.sg-embed');
         if (renderedGist && previewRef.current) {
           // 如果不是在预览容器内，移动进去
           if (!previewRef.current.contains(renderedGist)) {
@@ -202,7 +202,7 @@ export default function GistActions({gistId, gistUserId, nbLikes = 0, nbForks = 
       // 清理函数
       return () => {
         // 移除可能残留的 embed 内容
-        const existingGist = document.querySelector('.sify-gist-container');
+        const existingGist = document.querySelector('.sg-embed');
         if (existingGist && !previewRef.current?.contains(existingGist)) {
           existingGist.remove();
         }
@@ -217,7 +217,7 @@ export default function GistActions({gistId, gistUserId, nbLikes = 0, nbForks = 
       previewRef.current.innerHTML = '<div class="text-gray-500 italic text-sm p-4">Loading preview...</div>';
 
       // 移除旧的 embed 内容
-      const existingGist = document.querySelector('.sify-gist-container');
+      const existingGist = document.querySelector('.sg-embed');
       if (existingGist) {
         existingGist.remove();
       }

@@ -3,7 +3,6 @@ import { getGistById, getGistTopics } from '@/lib/gists';
 import Prism from 'prismjs';
 import 'prismjs/components/index';
 
-// 语言映射表
 const languageMap: Record<string, string> = {
   'js': 'javascript',
   'ts': 'typescript',
@@ -18,7 +17,13 @@ const languageMap: Record<string, string> = {
   'svelte': 'markup',
 };
 
-// 生成可嵌入的 JavaScript 代码
+function getFileSize(content: string): string {
+  const bytes = new TextEncoder().encode(content).length;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,7 +36,6 @@ export async function GET(
       return new NextResponse('Gist not found', { status: 404 });
     }
 
-    // 只允许公开和未列出的 Gist 被嵌入 (0=public, 1=unlisted, 2=private)
     if (gist.visibility === 2) {
       return new NextResponse('This gist is private', { status: 403 });
     }
@@ -41,16 +45,30 @@ export async function GET(
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const baseUrl = `${protocol}://${origin}`;
 
-    // 生成多文件标签页（如果有多个文件）
     const hasMultipleFiles = gist.files.length > 1;
-    
-    // 生成标签页导航
+
+    const url = new URL(request.url);
+    const themeParam = url.searchParams.get('theme');
+    const collapsibleParam = url.searchParams.get('collapsible');
+    const defaultCollapsedParam = url.searchParams.get('collapsed');
+    const isCollapsible = collapsibleParam === 'true';
+    const defaultCollapsed = defaultCollapsedParam === 'true';
+
+    const filesData = gist.files.map(file => ({
+      filename: file.filename,
+      language: file.language || 'text',
+      content: file.content,
+      size: getFileSize(file.content),
+      highlighted: generateCodeHtml(file.content, file.language),
+    }));
+
     const tabsHtml = hasMultipleFiles ? `
-      <div class="sify-gist-tabs">
+      <div class="sg-tabs">
         ${gist.files.map((file, index) => `
-          <button class="sify-gist-tab ${index === 0 ? 'active' : ''}" data-index="${index}">
-            <svg class="sify-gist-tab-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <button class="sg-tab${index === 0 ? ' active' : ''}" data-index="${index}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
             </svg>
             ${escapeContent(file.filename)}
           </button>
@@ -58,812 +76,217 @@ export async function GET(
       </div>
     ` : '';
 
-    // 生成文件内容（使用语法高亮）
-    const filesHtml = gist.files.map((file, index) => `
-      <div class="sify-gist-file ${hasMultipleFiles ? 'sify-gist-file-tabbed' : ''}" data-index="${index}" style="${hasMultipleFiles && index > 0 ? 'display: none;' : ''}">
-        <div class="sify-gist-file-header">
-          <span class="sify-gist-filename">${escapeContent(file.filename)}</span>
-          <a class="sify-gist-raw-link" href="${baseUrl}/api/gists/${id}/raw/${encodeURIComponent(file.filename)}" target="_blank">view raw</a>
-        </div>
-        <div class="sify-gist-code">${generateCodeHtml(file.content, file.language)}</div>
+    const filesHtml = filesData.map((file, index) => `
+      <div class="sg-file${hasMultipleFiles ? ' sg-file-tabbed' : ''}" data-index="${index}" style="${hasMultipleFiles && index > 0 ? 'display:none;' : ''}">
+        ${!hasMultipleFiles ? `
+        <div class="sg-file-header">
+          <span class="sg-filename">${escapeContent(file.filename)}</span>
+          <span class="sg-file-meta">${file.size}</span>
+          <span class="sg-file-actions">
+            <a href="${baseUrl}/api/gists/${id}/raw/${encodeURIComponent(file.filename)}" target="_blank">view raw</a>
+            <button class="sg-copy-btn" data-content="${escapeContent(file.content)}">copy</button>
+          </span>
+        </div>` : ''}
+        <div class="sg-code">${file.highlighted}</div>
       </div>
     `).join('');
 
-    const topicsHtml = topics.length > 0 
-      ? `<div class="sify-gist-topics">${topics.map(t => `<span class="sify-gist-topic">${escapeContent(t)}</span>`).join('')}</div>` 
+    const topicsHtml = topics.length > 0
+      ? `<div class="sg-topics">${topics.map(t => `<span class="sg-topic">${escapeContent(t)}</span>`).join('')}</div>`
       : '';
 
-    const descriptionHtml = gist.description 
-      ? `<div class="sify-gist-description">${escapeContent(gist.description)}</div>` 
+    const descriptionHtml = gist.description
+      ? `<div class="sg-description">${escapeContent(gist.description)}</div>`
       : '';
 
-    // 获取主题参数和折叠参数
-    const url = new URL(request.url);
-    const themeParam = url.searchParams.get('theme');
-    const collapsibleParam = url.searchParams.get('collapsible');
-    const defaultCollapsedParam = url.searchParams.get('collapsed');
-    const isCollapsible = collapsibleParam === 'true';
-    const defaultCollapsed = defaultCollapsedParam === 'true';
-    // 生成 JavaScript 代码
+    const collapsibleBtnHtml = isCollapsible
+      ? `<button class="sg-toggle" onclick="window._sgToggle('${escapeForJsTemplate(id)}')" title="Toggle">
+          <svg class="sg-toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>`
+      : '';
+
     const jsCode = `
 (function() {
-  // 获取脚本 URL 中的主题参数
   var currentScript = document.currentScript;
   var scriptSrc = currentScript ? currentScript.src : '';
   var themeMatch = scriptSrc && scriptSrc.match(/[?&]theme=(light|dark)/);
   var forcedTheme = themeMatch ? themeMatch[1] : null;
-  
-  var container = document.currentScript.parentElement;
-  var gistContainer = document.createElement('div');
+
   var isCollapsible = ${isCollapsible};
-  var hasStoredState = localStorage.getItem('sify-gist-collapsed-' + ${JSON.stringify(id)}) !== null;
-  var isCollapsed = isCollapsible && (hasStoredState ? localStorage.getItem('sify-gist-collapsed-' + ${JSON.stringify(id)}) === 'true' : ${defaultCollapsed});
-  gistContainer.className = 'sify-gist-container' + (forcedTheme ? ' sify-gist-theme-' + forcedTheme : '') + (isCollapsible ? ' sify-gist-collapsible' : '') + (isCollapsed ? ' sify-gist-collapsed' : '');
-  gistContainer.innerHTML = \`
-    <style>
-      /* Light theme (default) */
-      .sify-gist-container {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
-        color: #24292f;
-        background-color: #ffffff;
-        border: 1px solid #d0d7de;
-        border-radius: 8px;
-        margin: 16px 0;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.2s ease;
-      }
-      .sify-gist-container:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      }
-      .sify-gist-header {
-        padding: 14px 18px;
-        background-color: #f6f8fa;
-        border-bottom: 1px solid #d0d7de;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .sify-gist-title {
-        font-weight: 600;
-        color: #0969da;
-        text-decoration: none;
-        font-size: 15px;
-        transition: color 0.2s ease;
-      }
-      .sify-gist-title:hover {
-        color: #0550ae;
-        text-decoration: underline;
-      }
-      .sify-gist-meta {
-        font-size: 12px;
-        color: #57606a;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .sify-gist-user {
-        color: #57606a;
-        text-decoration: none;
-        transition: color 0.2s ease;
-      }
-      .sify-gist-user:hover {
-        color: #0969da;
-      }
-      .sify-gist-description {
-        padding: 12px 18px;
-        color: #57606a;
-        font-size: 13px;
-        border-bottom: 1px solid #d0d7de;
-        line-height: 1.4;
-      }
-      .sify-gist-topics {
-        padding: 10px 18px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        background-color: #f6f8fa;
-        border-bottom: 1px solid #d0d7de;
-      }
-      .sify-gist-topic {
-        display: inline-block;
-        padding: 3px 10px;
-        font-size: 12px;
-        color: #0969da;
-        background-color: #ddf4ff;
-        border-radius: 12px;
-        text-decoration: none;
-        transition: all 0.2s ease;
-      }
-      .sify-gist-topic:hover {
-        background-color: #cce7ff;
-        transform: translateY(-1px);
-      }
-      .sify-gist-tabs {
-        display: flex;
-        overflow-x: auto;
-        background-color: #f6f8fa;
-        border-bottom: 1px solid #d0d7de;
-        gap: 0;
-      }
-      .sify-gist-tab {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 12px 18px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #57606a;
-        background: none;
-        border: none;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.2s ease;
-        position: relative;
-      }
-      .sify-gist-tab:hover {
-        color: #24292f;
-        background-color: #f3f4f6;
-      }
-      .sify-gist-tab.active {
-        color: #24292f;
-        border-bottom-color: #0969da;
-        font-weight: 600;
-      }
-      .sify-gist-tab-icon {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
-      }
-      .sify-gist-file {
-        border-bottom: 1px solid #d0d7de;
-      }
-      .sify-gist-file-tabbed .sify-gist-file-header {
-        display: none;
-      }
-      .sify-gist-file:last-child {
-        border-bottom: none;
-      }
-      .sify-gist-file-header {
-        padding: 10px 18px;
-        background-color: #f6f8fa;
-        border-bottom: 1px solid #d0d7de;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .sify-gist-filename {
-        font-weight: 600;
-        color: #24292f;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .sify-gist-filename::before {
-        content: '';
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2357606a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' /%3E%3C/svg%3E");
-        background-size: contain;
-        background-repeat: no-repeat;
-      }
-      .sify-gist-raw-link {
-        font-size: 12px;
-        color: #57606a;
-        text-decoration: none;
-        transition: color 0.2s ease;
-        padding: 2px 6px;
-        border-radius: 4px;
-      }
-      .sify-gist-raw-link:hover {
-        color: #0969da;
-        background-color: #e6f3ff;
-      }
-      .sify-gist-code {
-        margin: 0;
-        padding: 0;
-        overflow-x: auto;
-        background-color: #ffffff;
-      }
-      .sify-gist-code-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-        font-size: 13px;
-        line-height: 1.6;
-        margin: 0;
-      }
-      .sify-gist-line {
-        height: 20px;
-        transition: background-color 0.1s ease;
-      }
-      .sify-gist-line:hover {
-        background-color: #f8f9fa;
-      }
-      .sify-gist-line-num {
-        padding: 0 12px;
-        text-align: right;
-        color: #6e7681;
-        user-select: none;
-        background-color: #f6f8fa;
-        border-right: 1px solid #d0d7de;
-        vertical-align: top;
-        position: sticky;
-        left: 0;
-      }
-      .sify-gist-line-code {
-        padding: 0 16px;
-        white-space: pre;
-        vertical-align: top;
-      }
-      /* Collapsible functionality */
-      .sify-gist-collapsible .sify-gist-toggle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
-        margin-left: 8px;
-        font-size: 12px;
-        color: #57606a;
-        background: none;
-        border: 1px solid #d0d7de;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .sify-gist-collapsible .sify-gist-toggle:hover {
-        background-color: #f3f4f6;
-        border-color: #b3b9c0;
-      }
-      .sify-gist-collapsible .sify-gist-toggle-icon {
-        width: 12px;
-        height: 12px;
-        transition: transform 0.2s ease;
-      }
-      .sify-gist-collapsed .sify-gist-toggle-icon {
-        transform: rotate(-90deg);
-      }
-      .sify-gist-collapsible .sify-gist-content {
-        transition: max-height 0.5s ease, opacity 0.3s ease;
-        overflow: hidden;
-        max-height: 2000px;
-      }
-      .sify-gist-collapsed .sify-gist-content {
-        max-height: 0;
-        opacity: 0;
-      }
-      .sify-gist-collapsible:not(.sify-gist-collapsed) .sify-gist-content {
-        max-height: 2000px;
-        opacity: 1;
-      }
+  var gistId = ${JSON.stringify(id)};
+  var hasStoredState = localStorage.getItem('sg-collapsed-' + gistId) !== null;
+  var isCollapsed = isCollapsible && (hasStoredState ? localStorage.getItem('sg-collapsed-' + gistId) === 'true' : ${defaultCollapsed});
 
-      /* Prism.js 主题 - 浅色 */
-      .sify-gist-code .token.comment,
-      .sify-gist-code .token.prolog,
-      .sify-gist-code .token.doctype,
-      .sify-gist-code .token.cdata { color: #6a737d; }
-      .sify-gist-code .token.punctuation { color: #24292f; }
-      .sify-gist-code .token.property,
-      .sify-gist-code .token.tag,
-      .sify-gist-code .token.boolean,
-      .sify-gist-code .token.number,
-      .sify-gist-code .token.constant,
-      .sify-gist-code .token.symbol,
-      .sify-gist-code .token.deleted { color: #005cc5; }
-      .sify-gist-code .token.selector,
-      .sify-gist-code .token.attr-name,
-      .sify-gist-code .token.string,
-      .sify-gist-code .token.char,
-      .sify-gist-code .token.builtin,
-      .sify-gist-code .token.inserted { color: #22863a; }
-      .sify-gist-code .token.operator,
-      .sify-gist-code .token.entity,
-      .sify-gist-code .token.url,
-      .sify-gist-code .language-css .token.string,
-      .sify-gist-code .style .token.string { color: #d73a49; }
-      .sify-gist-code .token.atrule,
-      .sify-gist-code .token.attr-value,
-      .sify-gist-code .token.keyword { color: #d73a49; }
-      .sify-gist-code .token.function,
-      .sify-gist-code .token.class-name { color: #6f42c1; }
-      .sify-gist-code .token.regex,
-      .sify-gist-code .token.important,
-      .sify-gist-code .token.variable { color: #e36209; }
-      .sify-gist-footer {
-        padding: 10px 18px;
-        background-color: #f6f8fa;
-        border-top: 1px solid #d0d7de;
-        font-size: 12px;
-        color: #57606a;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .sify-gist-footer a {
-        color: #57606a;
-        text-decoration: none;
-        transition: color 0.2s ease;
-      }
-      .sify-gist-footer a:hover {
-        color: #0969da;
-      }
+  var el = document.createElement('div');
+  el.className = 'sg-embed' + (forcedTheme ? ' sg-theme-' + forcedTheme : '') + (isCollapsible ? ' sg-collapsible' : '') + (isCollapsed ? ' sg-collapsed' : '');
 
-      /* Dark theme - 自动检测系统偏好 */
-      @media (prefers-color-scheme: dark) {
-        .sify-gist-container:not(.sify-gist-theme-light) {
-          color: #c9d1d9;
-          background-color: #0d1117;
-          border-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light):hover {
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-header {
-          background-color: #161b22;
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-title {
-          color: #58a6ff;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-meta {
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-user {
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-user:hover {
-          color: #58a6ff;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-toggle {
-          color: #8b949e;
-          border-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-toggle:hover {
-          background-color: #21262d;
-          border-color: #50555a;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-description {
-          color: #8b949e;
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topics {
-          background-color: #161b22;
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topic {
-          color: #58a6ff;
-          background-color: #1f3a5f;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-topic:hover {
-          background-color: #264269;
-          transform: translateY(-1px);
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tabs {
-          background-color: #161b22;
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab {
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab:hover {
-          color: #c9d1d9;
-          background-color: #21262d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-tab.active {
-          color: #c9d1d9;
-          border-bottom-color: #58a6ff;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-file {
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-file-header {
-          background-color: #161b22;
-          border-bottom-color: #30363d;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-filename {
-          color: #c9d1d9;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-raw-link {
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-raw-link:hover {
-          color: #58a6ff;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-code {
-          background-color: #0d1117;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-line:hover {
-          background-color: #161b22;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-line-num {
-          color: #484f58;
-          background-color: #161b22;
-          border-right-color: #30363d;
-        }
-        /* Prism.js 主题 - 暗色 */
-        .sify-gist-container:not(.sify-gist-theme-light) .token.comment,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.prolog,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.doctype,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.cdata { color: #8b949e; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.punctuation { color: #c9d1d9; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.property,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.tag,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.boolean,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.number,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.constant,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.symbol,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.deleted { color: #79c0ff; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.selector,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.attr-name,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.string,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.char,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.builtin,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.inserted { color: #7ee787; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.operator,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.entity,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.url,
-        .sify-gist-container:not(.sify-gist-theme-light) .language-css .token.string,
-        .sify-gist-container:not(.sify-gist-theme-light) .style .token.string { color: #ff7b72; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.atrule,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.attr-value,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.keyword { color: #ff7b72; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.function,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.class-name { color: #d2a8ff; }
-        .sify-gist-container:not(.sify-gist-theme-light) .token.regex,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.important,
-        .sify-gist-container:not(.sify-gist-theme-light) .token.variable { color: #ffa657; }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer {
-          background-color: #161b22;
-          border-top-color: #30363d;
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer a {
-          color: #8b949e;
-        }
-        .sify-gist-container:not(.sify-gist-theme-light) .sify-gist-footer a:hover {
-          color: #58a6ff;
-        }
-      }
+  el.innerHTML = \`
+<style>
+  .sg-embed {
+    --sg-bg: #ffffff;
+    --sg-bg-secondary: #f6f8fa;
+    --sg-border: #d0d7de;
+    --sg-text: #24292f;
+    --sg-text-secondary: #656d76;
+    --sg-text-muted: #8b949e;
+    --sg-link: #0969da;
+    --sg-code-bg: #ffffff;
+    --sg-line-num-bg: #f6f8fa;
+    --sg-line-num-border: #d0d7de;
+    --sg-line-hover: #f6f8fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--sg-text);
+    background: var(--sg-bg);
+    border: 1px solid var(--sg-border);
+    border-radius: 6px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .sg-header {
+    padding: 10px 16px;
+    background: var(--sg-bg-secondary);
+    border-bottom: 1px solid var(--sg-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .sg-title { font-weight: 600; color: var(--sg-link); text-decoration: none; font-size: 14px; }
+  .sg-title:hover { text-decoration: underline; }
+  .sg-meta { font-size: 12px; color: var(--sg-text-secondary); display: flex; align-items: center; gap: 8px; }
+  .sg-user { color: var(--sg-text-secondary); text-decoration: none; }
+  .sg-user:hover { color: var(--sg-link); }
+  .sg-description { padding: 8px 16px; color: var(--sg-text-secondary); font-size: 13px; border-bottom: 1px solid var(--sg-border); }
+  .sg-topics { padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px; background: var(--sg-bg-secondary); border-bottom: 1px solid var(--sg-border); }
+  .sg-topic { display: inline-block; padding: 2px 8px; font-size: 12px; color: var(--sg-link); background: #ddf4ff; border-radius: 12px; text-decoration: none; }
+  .sg-tabs { display: flex; overflow-x: auto; background: var(--sg-bg-secondary); border-bottom: 1px solid var(--sg-border); }
+  .sg-tab { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--sg-text-secondary); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .sg-tab:hover { color: var(--sg-text); background: var(--sg-line-hover); }
+  .sg-tab.active { color: var(--sg-text); border-bottom-color: var(--sg-link); font-weight: 600; }
+  .sg-file { border-bottom: 1px solid var(--sg-border); }
+  .sg-file:last-child { border-bottom: none; }
+  .sg-file-tabbed .sg-file-header { display: none; }
+  .sg-file-header { padding: 8px 16px; background: var(--sg-bg-secondary); border-bottom: 1px solid var(--sg-border); display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .sg-filename { font-weight: 600; color: var(--sg-text); }
+  .sg-file-meta { color: var(--sg-text-muted); }
+  .sg-file-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .sg-file-actions a, .sg-file-actions button { color: var(--sg-text-secondary); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; font-family: inherit; }
+  .sg-file-actions a:hover, .sg-file-actions button:hover { color: var(--sg-link); }
+  .sg-code { margin: 0; padding: 0; overflow-x: auto; background: var(--sg-code-bg); }
+  .sg-code table { width: 100%; border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 20px; }
+  .sg-code tr:hover { background: var(--sg-line-hover); }
+  .sg-code td { padding: 0; vertical-align: top; }
+  .sg-line-num { width: 1%; min-width: 40px; padding: 0 12px; text-align: right; color: var(--sg-text-muted); user-select: none; background: var(--sg-line-num-bg); border-right: 1px solid var(--sg-line-num-border); }
+  .sg-line-code { padding: 0 16px; white-space: pre; }
+  .sg-footer { padding: 8px 16px; background: var(--sg-bg-secondary); border-top: 1px solid var(--sg-border); font-size: 12px; color: var(--sg-text-muted); display: flex; justify-content: space-between; }
+  .sg-footer a { color: var(--sg-text-muted); text-decoration: none; }
+  .sg-footer a:hover { color: var(--sg-link); }
+  .sg-collapsible .sg-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 12px; color: var(--sg-text-secondary); background: none; border: 1px solid var(--sg-border); border-radius: 4px; cursor: pointer; }
+  .sg-collapsible .sg-toggle:hover { background: var(--sg-line-hover); }
+  .sg-collapsed .sg-toggle-icon { transform: rotate(-90deg); }
+  .sg-collapsible .sg-content { transition: max-height 0.3s ease, opacity 0.2s ease; overflow: hidden; max-height: 5000px; opacity: 1; }
+  .sg-collapsed .sg-content { max-height: 0; opacity: 0; }
+  .sg-code .token.comment, .sg-code .token.prolog, .sg-code .token.doctype, .sg-code .token.cdata { color: #6a737d; }
+  .sg-code .token.punctuation { color: #24292f; }
+  .sg-code .token.property, .sg-code .token.tag, .sg-code .token.boolean, .sg-code .token.number, .sg-code .token.constant, .sg-code .token.symbol, .sg-code .token.deleted { color: #005cc5; }
+  .sg-code .token.selector, .sg-code .token.attr-name, .sg-code .token.string, .sg-code .token.char, .sg-code .token.builtin, .sg-code .token.inserted { color: #22863a; }
+  .sg-code .token.operator, .sg-code .token.entity, .sg-code .token.url, .sg-code .language-css .token.string, .sg-code .style .token.string { color: #d73a49; }
+  .sg-code .token.atrule, .sg-code .token.attr-value, .sg-code .token.keyword { color: #d73a49; }
+  .sg-code .token.function, .sg-code .token.class-name { color: #6f42c1; }
+  .sg-code .token.regex, .sg-code .token.important, .sg-code .token.variable { color: #e36209; }
+  @media (prefers-color-scheme: dark) {
+    .sg-embed:not(.sg-theme-light) { --sg-bg: #0d1117; --sg-bg-secondary: #161b22; --sg-border: #30363d; --sg-text: #c9d1d9; --sg-text-secondary: #8b949e; --sg-text-muted: #484f58; --sg-link: #58a6ff; --sg-code-bg: #0d1117; --sg-line-num-bg: #161b22; --sg-line-num-border: #30363d; --sg-line-hover: #161b22; }
+    .sg-embed:not(.sg-theme-light) .sg-topic { color: #58a6ff; background: #1f3a5f; }
+    .sg-embed:not(.sg-theme-light) .token.comment, .sg-embed:not(.sg-theme-light) .token.prolog, .sg-embed:not(.sg-theme-light) .token.doctype, .sg-embed:not(.sg-theme-light) .token.cdata { color: #8b949e; }
+    .sg-embed:not(.sg-theme-light) .token.punctuation { color: #c9d1d9; }
+    .sg-embed:not(.sg-theme-light) .token.property, .sg-embed:not(.sg-theme-light) .token.tag, .sg-embed:not(.sg-theme-light) .token.boolean, .sg-embed:not(.sg-theme-light) .token.number, .sg-embed:not(.sg-theme-light) .token.constant, .sg-embed:not(.sg-theme-light) .token.symbol, .sg-embed:not(.sg-theme-light) .token.deleted { color: #79c0ff; }
+    .sg-embed:not(.sg-theme-light) .token.selector, .sg-embed:not(.sg-theme-light) .token.attr-name, .sg-embed:not(.sg-theme-light) .token.string, .sg-embed:not(.sg-theme-light) .token.char, .sg-embed:not(.sg-theme-light) .token.builtin, .sg-embed:not(.sg-theme-light) .token.inserted { color: #7ee787; }
+    .sg-embed:not(.sg-theme-light) .token.operator, .sg-embed:not(.sg-theme-light) .token.entity, .sg-embed:not(.sg-theme-light) .token.url, .sg-embed:not(.sg-theme-light) .language-css .token.string, .sg-embed:not(.sg-theme-light) .style .token.string { color: #ff7b72; }
+    .sg-embed:not(.sg-theme-light) .token.atrule, .sg-embed:not(.sg-theme-light) .token.attr-value, .sg-embed:not(.sg-theme-light) .token.keyword { color: #ff7b72; }
+    .sg-embed:not(.sg-theme-light) .token.function, .sg-embed:not(.sg-theme-light) .token.class-name { color: #d2a8ff; }
+    .sg-embed:not(.sg-theme-light) .token.regex, .sg-embed:not(.sg-theme-light) .token.important, .sg-embed:not(.sg-theme-light) .token.variable { color: #ffa657; }
+  }
+  .sg-theme-dark { --sg-bg: #0d1117 !important; --sg-bg-secondary: #161b22 !important; --sg-border: #30363d !important; --sg-text: #c9d1d9 !important; --sg-text-secondary: #8b949e !important; --sg-text-muted: #484f58 !important; --sg-link: #58a6ff !important; --sg-code-bg: #0d1117 !important; --sg-line-num-bg: #161b22 !important; --sg-line-num-border: #30363d !important; --sg-line-hover: #161b22 !important; }
+  .sg-theme-dark .sg-topic { color: #58a6ff !important; background: #1f3a5f !important; }
+  .sg-theme-dark .token.comment, .sg-theme-dark .token.prolog, .sg-theme-dark .token.doctype, .sg-theme-dark .token.cdata { color: #8b949e !important; }
+  .sg-theme-dark .token.punctuation { color: #c9d1d9 !important; }
+  .sg-theme-dark .token.property, .sg-theme-dark .token.tag, .sg-theme-dark .token.boolean, .sg-theme-dark .token.number, .sg-theme-dark .token.constant, .sg-theme-dark .token.symbol, .sg-theme-dark .token.deleted { color: #79c0ff !important; }
+  .sg-theme-dark .token.selector, .sg-theme-dark .token.attr-name, .sg-theme-dark .token.string, .sg-theme-dark .token.char, .sg-theme-dark .token.builtin, .sg-theme-dark .token.inserted { color: #7ee787 !important; }
+  .sg-theme-dark .token.operator, .sg-theme-dark .token.entity, .sg-theme-dark .token.url, .sg-theme-dark .language-css .token.string, .sg-theme-dark .style .token.string { color: #ff7b72 !important; }
+  .sg-theme-dark .token.atrule, .sg-theme-dark .token.attr-value, .sg-theme-dark .token.keyword { color: #ff7b72 !important; }
+  .sg-theme-dark .token.function, .sg-theme-dark .token.class-name { color: #d2a8ff !important; }
+  .sg-theme-dark .token.regex, .sg-theme-dark .token.important, .sg-theme-dark .token.variable { color: #ffa657 !important; }
+  .sg-theme-light { --sg-bg: #ffffff !important; --sg-bg-secondary: #f6f8fa !important; --sg-border: #d0d7de !important; --sg-text: #24292f !important; --sg-text-secondary: #656d76 !important; --sg-text-muted: #8b949e !important; --sg-link: #0969da !important; --sg-code-bg: #ffffff !important; --sg-line-num-bg: #f6f8fa !important; --sg-line-num-border: #d0d7de !important; --sg-line-hover: #f6f8fa !important; }
+  .sg-theme-light .sg-topic { color: #0969da !important; background: #ddf4ff !important; }
+  .sg-theme-light .token.comment, .sg-theme-light .token.prolog, .sg-theme-light .token.doctype, .sg-theme-light .token.cdata { color: #6a737d !important; }
+  .sg-theme-light .token.punctuation { color: #24292f !important; }
+  .sg-theme-light .token.property, .sg-theme-light .token.tag, .sg-theme-light .token.boolean, .sg-theme-light .token.number, .sg-theme-light .token.constant, .sg-theme-light .token.symbol, .sg-theme-light .token.deleted { color: #005cc5 !important; }
+  .sg-theme-light .token.selector, .sg-theme-light .token.attr-name, .sg-theme-light .token.string, .sg-theme-light .token.char, .sg-theme-light .token.builtin, .sg-theme-light .token.inserted { color: #22863a !important; }
+  .sg-theme-light .token.operator, .sg-theme-light .token.entity, .sg-theme-light .token.url, .sg-theme-light .language-css .token.string, .sg-theme-light .style .token.string { color: #d73a49 !important; }
+  .sg-theme-light .token.atrule, .sg-theme-light .token.attr-value, .sg-theme-light .token.keyword { color: #d73a49 !important; }
+  .sg-theme-light .token.function, .sg-theme-light .token.class-name { color: #6f42c1 !important; }
+  .sg-theme-light .token.regex, .sg-theme-light .token.important, .sg-theme-light .token.variable { color: #e36209 !important; }
+</style>
+<div class="sg-header">
+  <a class="sg-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeContent(gist.title || 'Untitled')}</a>
+  <div class="sg-meta">
+    ${collapsibleBtnHtml}
+    <a class="sg-user" href="${baseUrl}/users/${escapeContent(gist.user?.username_normalized || '')}" target="_blank">${escapeContent(gist.user?.name || 'Anonymous')}</a>
+    <span>\u00b7</span>
+    <span>${formatDate(gist.created_at)}</span>
+  </div>
+</div>
+<div class="sg-content">
+  ${descriptionHtml}
+  ${topicsHtml}
+  ${tabsHtml}
+  <div class="sg-files">${filesHtml}</div>
+</div>
+<div class="sg-footer">
+  <span>via <a href="${baseUrl}" target="_blank">Sify Gist</a></span>
+  <a href="${baseUrl}/gists/${id}" target="_blank">View on Sify Gist</a>
+</div>
+\`;
 
-      /* 强制暗色主题 */
-      .sify-gist-theme-dark {
-        color: #c9d1d9 !important;
-        background-color: #0d1117 !important;
-        border-color: #30363d !important;
-      }
-      .sify-gist-theme-dark:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-      }
-      .sify-gist-theme-dark .sify-gist-header {
-        background-color: #161b22 !important;
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-title {
-        color: #58a6ff !important;
-      }
-      .sify-gist-theme-dark .sify-gist-meta {
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-user {
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-toggle {
-        color: #8b949e !important;
-        border-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-toggle:hover {
-        background-color: #21262d !important;
-        border-color: #50555a !important;
-      }
-      .sify-gist-theme-dark .sify-gist-description {
-        color: #8b949e !important;
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-topics {
-        background-color: #161b22 !important;
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-topic {
-        color: #58a6ff !important;
-        background-color: #1f3a5f !important;
-      }
-      .sify-gist-theme-dark .sify-gist-topic:hover {
-        background-color: #264269 !important;
-        transform: translateY(-1px) !important;
-      }
-      .sify-gist-theme-dark .sify-gist-tabs {
-        background-color: #161b22 !important;
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-tab {
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-tab:hover {
-        color: #c9d1d9 !important;
-        background-color: #21262d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-tab.active {
-        color: #c9d1d9 !important;
-        border-bottom-color: #58a6ff !important;
-      }
-      .sify-gist-theme-dark .sify-gist-file {
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-file-header {
-        background-color: #161b22 !important;
-        border-bottom-color: #30363d !important;
-      }
-      .sify-gist-theme-dark .sify-gist-filename {
-        color: #c9d1d9 !important;
-      }
-      .sify-gist-theme-dark .sify-gist-raw-link {
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-raw-link:hover {
-        color: #58a6ff !important;
-      }
-      .sify-gist-theme-dark .sify-gist-code {
-        background-color: #0d1117 !important;
-      }
-      .sify-gist-theme-dark .sify-gist-line:hover {
-        background-color: #161b22 !important;
-      }
-      .sify-gist-theme-dark .sify-gist-line-num {
-        color: #484f58 !important;
-        background-color: #161b22 !important;
-        border-right-color: #30363d !important;
-      }
-      /* Prism.js 主题 - 强制暗色 */
-      .sify-gist-theme-dark .token.comment,
-      .sify-gist-theme-dark .token.prolog,
-      .sify-gist-theme-dark .token.doctype,
-      .sify-gist-theme-dark .token.cdata { color: #8b949e !important; }
-      .sify-gist-theme-dark .token.punctuation { color: #c9d1d9 !important; }
-      .sify-gist-theme-dark .token.property,
-      .sify-gist-theme-dark .token.tag,
-      .sify-gist-theme-dark .token.boolean,
-      .sify-gist-theme-dark .token.number,
-      .sify-gist-theme-dark .token.constant,
-      .sify-gist-theme-dark .token.symbol,
-      .sify-gist-theme-dark .token.deleted { color: #79c0ff !important; }
-      .sify-gist-theme-dark .token.selector,
-      .sify-gist-theme-dark .token.attr-name,
-      .sify-gist-theme-dark .token.string,
-      .sify-gist-theme-dark .token.char,
-      .sify-gist-theme-dark .token.builtin,
-      .sify-gist-theme-dark .token.inserted { color: #7ee787 !important; }
-      .sify-gist-theme-dark .token.operator,
-      .sify-gist-theme-dark .token.entity,
-      .sify-gist-theme-dark .token.url,
-      .sify-gist-theme-dark .language-css .token.string,
-      .sify-gist-theme-dark .style .token.string { color: #ff7b72 !important; }
-      .sify-gist-theme-dark .token.atrule,
-      .sify-gist-theme-dark .token.attr-value,
-      .sify-gist-theme-dark .token.keyword { color: #ff7b72 !important; }
-      .sify-gist-theme-dark .token.function,
-      .sify-gist-theme-dark .token.class-name { color: #d2a8ff !important; }
-      .sify-gist-theme-dark .token.regex,
-      .sify-gist-theme-dark .token.important,
-      .sify-gist-theme-dark .token.variable { color: #ffa657 !important; }
-      .sify-gist-theme-dark .sify-gist-footer {
-        background-color: #161b22 !important;
-        border-top-color: #30363d !important;
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-footer a {
-        color: #8b949e !important;
-      }
-      .sify-gist-theme-dark .sify-gist-footer a:hover {
-        color: #58a6ff !important;
-      }
-
-      /* 强制浅色主题 */
-      .sify-gist-theme-light {
-        color: #24292f !important;
-        background-color: #ffffff !important;
-        border-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-header {
-        background-color: #f6f8fa !important;
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-title {
-        color: #0969da !important;
-      }
-      .sify-gist-theme-light .sify-gist-meta {
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-user {
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-toggle {
-        color: #57606a !important;
-        border-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-toggle:hover {
-        background-color: #f3f4f6 !important;
-        border-color: #b3b9c0 !important;
-      }
-      .sify-gist-theme-light .sify-gist-description {
-        color: #57606a !important;
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-topics {
-        background-color: #f6f8fa !important;
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-topic {
-        color: #0969da !important;
-        background-color: #ddf4ff !important;
-      }
-      .sify-gist-theme-light .sify-gist-tabs {
-        background-color: #f6f8fa !important;
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-tab {
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-tab:hover {
-        color: #24292f !important;
-        background-color: #f3f4f6 !important;
-      }
-      .sify-gist-theme-light .sify-gist-tab.active {
-        color: #24292f !important;
-        border-bottom-color: #0969da !important;
-      }
-      .sify-gist-theme-light .sify-gist-file {
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-file-header {
-        background-color: #f6f8fa !important;
-        border-bottom-color: #d0d7de !important;
-      }
-      .sify-gist-theme-light .sify-gist-filename {
-        color: #24292f !important;
-      }
-      .sify-gist-theme-light .sify-gist-raw-link {
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-raw-link:hover {
-        color: #0969da !important;
-      }
-      .sify-gist-theme-light .sify-gist-code {
-        background-color: #ffffff !important;
-      }
-      .sify-gist-theme-light .sify-gist-line-num {
-        color: #6e7681 !important;
-        background-color: #f6f8fa !important;
-        border-right-color: #d0d7de !important;
-      }
-      /* Prism.js 主题 - 强制浅色 */
-      .sify-gist-theme-light .token.comment,
-      .sify-gist-theme-light .token.prolog,
-      .sify-gist-theme-light .token.doctype,
-      .sify-gist-theme-light .token.cdata { color: #6a737d !important; }
-      .sify-gist-theme-light .token.punctuation { color: #24292f !important; }
-      .sify-gist-theme-light .token.property,
-      .sify-gist-theme-light .token.tag,
-      .sify-gist-theme-light .token.boolean,
-      .sify-gist-theme-light .token.number,
-      .sify-gist-theme-light .token.constant,
-      .sify-gist-theme-light .token.symbol,
-      .sify-gist-theme-light .token.deleted { color: #005cc5 !important; }
-      .sify-gist-theme-light .token.selector,
-      .sify-gist-theme-light .token.attr-name,
-      .sify-gist-theme-light .token.string,
-      .sify-gist-theme-light .token.char,
-      .sify-gist-theme-light .token.builtin,
-      .sify-gist-theme-light .token.inserted { color: #22863a !important; }
-      .sify-gist-theme-light .token.operator,
-      .sify-gist-theme-light .token.entity,
-      .sify-gist-theme-light .token.url,
-      .sify-gist-theme-light .language-css .token.string,
-      .sify-gist-theme-light .style .token.string { color: #d73a49 !important; }
-      .sify-gist-theme-light .token.atrule,
-      .sify-gist-theme-light .token.attr-value,
-      .sify-gist-theme-light .token.keyword { color: #d73a49 !important; }
-      .sify-gist-theme-light .token.function,
-      .sify-gist-theme-light .token.class-name { color: #6f42c1 !important; }
-      .sify-gist-theme-light .token.regex,
-      .sify-gist-theme-light .token.important,
-      .sify-gist-theme-light .token.variable { color: #e36209 !important; }
-      .sify-gist-theme-light .sify-gist-footer {
-        background-color: #f6f8fa !important;
-        border-top-color: #d0d7de !important;
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-footer a {
-        color: #57606a !important;
-      }
-      .sify-gist-theme-light .sify-gist-footer a:hover {
-        color: #0969da !important;
-      }
-    </style>
-    <div class="sify-gist-header">
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-        <a class="sify-gist-title" href="${baseUrl}/gists/${id}" target="_blank">${escapeContent(gist.title || 'Untitled')}</a>
-        ${isCollapsible ? `<button class="sify-gist-toggle" onclick="toggleGist('${id}')" title="Toggle content">
-          <svg class="sify-gist-toggle-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-          <span class="sify-gist-toggle-text">Collapse</span>
-        </button>` : ''}
-      </div>
-      <div class="sify-gist-meta">
-        <a class="sify-gist-user" href="${baseUrl}/profile" target="_blank">${escapeContent(gist.user?.name || 'Anonymous')}</a>
-        <span>·</span>
-        <span>${formatDate(gist.created_at)}</span>
-      </div>
-    </div>
-    <div class="sify-gist-content">
-      ${descriptionHtml}
-      ${topicsHtml}
-      ${tabsHtml}
-      <div class="sify-gist-files">${filesHtml}</div>
-    </div>
-    <div class="sify-gist-footer">
-      <span>via <a href="${baseUrl}" target="_blank">Sify Gist</a></span>
-      <a href="${baseUrl}/gists/${id}" target="_blank">View on Sify Gist</a>
-    </div>
-  \`;
-  
-  // 查找目标容器
-  var targetId = 'sify-gist-${id}';
+  var targetId = 'sify-gist-' + gistId;
   var target = document.getElementById(targetId);
   if (target) {
-    target.appendChild(gistContainer);
-  } else {
-    // 如果没有指定容器，插入到 script 标签之后
-    document.currentScript.insertAdjacentElement('afterend', gistContainer);
+    target.appendChild(el);
+  } else if (currentScript && currentScript.parentNode) {
+    currentScript.parentNode.insertBefore(el, currentScript.nextSibling);
   }
-  
-  // 折叠/展开功能
-  window.toggleGist = function(gistId) {
-    var container = document.querySelector('.sify-gist-container');
-    if (container) {
-      var isCollapsed = container.classList.contains('sify-gist-collapsed');
 
-      if (isCollapsed) {
-        container.classList.remove('sify-gist-collapsed');
-        localStorage.removeItem('sify-gist-collapsed-' + gistId);
-      } else {
-        container.classList.add('sify-gist-collapsed');
-        localStorage.setItem('sify-gist-collapsed-' + gistId, 'true');
-      }
-
-      // 更新按钮文本
-      var toggleBtn = container.querySelector('.sify-gist-toggle-text');
-      if (toggleBtn) {
-        toggleBtn.textContent = isCollapsed ? 'Collapse' : 'Expand';
-      }
+  window._sgToggle = function(gid) {
+    var c = document.querySelector('.sg-embed[data-gid="' + gid + '"]') || el;
+    var collapsed = c.classList.toggle('sg-collapsed');
+    if (collapsed) {
+      localStorage.setItem('sg-collapsed-' + gid, 'true');
+    } else {
+      localStorage.removeItem('sg-collapsed-' + gid);
     }
   };
 
-  // 标签页切换逻辑
-  var tabs = gistContainer.querySelectorAll('.sify-gist-tab');
-  var files = gistContainer.querySelectorAll('.sify-gist-file');
+  el.setAttribute('data-gid', gistId);
 
-  tabs.forEach(function(tab) {
+  el.querySelectorAll('.sg-copy-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var content = this.getAttribute('data-content');
+      navigator.clipboard.writeText(content).then(function() {
+        btn.textContent = 'copied!';
+        setTimeout(function() { btn.textContent = 'copy'; }, 2000);
+      });
+    });
+  });
+
+  el.querySelectorAll('.sg-tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
-      var index = this.getAttribute('data-index');
-
-      // 更新标签激活状态
-      tabs.forEach(function(t) { t.classList.remove('active'); });
+      var idx = this.getAttribute('data-index');
+      el.querySelectorAll('.sg-tab').forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
-
-      // 切换文件显示
-      files.forEach(function(file) {
-        if (file.getAttribute('data-index') === index) {
-          file.style.display = 'block';
-        } else {
-          file.style.display = 'none';
-        }
+      el.querySelectorAll('.sg-file').forEach(function(f) {
+        f.style.display = f.getAttribute('data-index') === idx ? '' : 'none';
       });
     });
   });
@@ -874,7 +297,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/javascript; charset=utf-8',
-        'Cache-Control': 'public, max-age=300', // 缓存 5 分钟
+        'Cache-Control': 'public, max-age=300',
       },
     });
   } catch (error) {
@@ -892,55 +315,45 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// 转义 JavaScript 模板字符串中的特殊字符
 function escapeForJsTemplate(str: string): string {
   return str
-    .replace(/\\/g, '\\\\')  // 转义反斜杠
-    .replace(/`/g, '\\`')     // 转义反引号
-    .replace(/\$/g, '\\$');   // 转义 $ 符号
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
 }
 
-// 统一的转义函数：先 HTML 转义，再 JS 模板字符串转义
 function escapeContent(str: string): string {
   return escapeForJsTemplate(escapeHtml(str));
 }
 
-// 使用 Prism.js 高亮代码
 function highlightCode(code: string, language: string): string {
-  // 获取实际语言
   const actualLang = languageMap[language.toLowerCase()] || language.toLowerCase();
-  
   try {
-    // 检查 Prism 是否支持该语言
     if (Prism.languages[actualLang]) {
       return Prism.highlight(code, Prism.languages[actualLang], actualLang);
     }
-    // 回退到自动检测
     return Prism.highlight(code, Prism.languages.javascript, 'javascript');
   } catch {
-    // 如果高亮失败，返回转义后的纯文本
     return escapeHtml(code);
   }
 }
 
-// 生成带行号的代码 HTML
 function generateCodeHtml(code: string, language: string): string {
   const highlighted = highlightCode(code, language);
-  // 转义模板字符串中的特殊字符
   const escapedHighlighted = escapeForJsTemplate(highlighted);
   const lines = escapedHighlighted.split('\n');
   const lineCount = lines.length;
   const lineNumberWidth = String(lineCount).length * 0.6 + 1;
-  
+
   const linesHtml = lines.map((line, index) => {
     const lineNum = index + 1;
-    return `<tr class="sify-gist-line">
-      <td class="sify-gist-line-num" style="width: ${lineNumberWidth}em;">${lineNum}</td>
-      <td class="sify-gist-line-code">${line || ' '}</td>
+    return `<tr>
+      <td class="sg-line-num" style="width:${lineNumberWidth}em">${lineNum}</td>
+      <td class="sg-line-code">${line || ' '}</td>
     </tr>`;
   }).join('');
-  
-  return `<table class="sify-gist-code-table">${linesHtml}</table>`;
+
+  return `<table>${linesHtml}</table>`;
 }
 
 function formatDate(dateStr: string): string {
