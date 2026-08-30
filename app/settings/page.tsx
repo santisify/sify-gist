@@ -185,13 +185,13 @@ export default function UserSettingsPage() {
         <div className="flex border-b mb-6" style={{ borderColor: 'var(--color-border)' }}>
           <button
             onClick={() => setActiveTab('tokens')}
-            className={`px-6 py-3 font-medium ${activeTab === 'tokens' ? 'border-b-2 border-blue-600 text-blue-600' : ''}`}
+            className={`px-6 py-3 font-medium ${activeTab === 'tokens' ? 'border-b-2 border-accent text-accent' : ''}`}
           >
             访问令牌
           </button>
           <button
             onClick={() => setActiveTab('ssh')}
-            className={`px-6 py-3 font-medium ${activeTab === 'ssh' ? 'border-b-2 border-blue-600 text-blue-600' : ''}`}
+            className={`px-6 py-3 font-medium ${activeTab === 'ssh' ? 'border-b-2 border-accent text-accent' : ''}`}
           >
             SSH 密钥
           </button>

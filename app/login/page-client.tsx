@@ -97,21 +97,16 @@ export default function LoginPageClient() {
       <div className="max-w-sm mx-auto">
         {/* Logo */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="w-10 h-10">
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="var(--color-primary)" />
-              <path d="M11 10L6 16L11 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M21 10L26 16L21 22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M18 8L14 24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-            <span className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>Sify Gist</span>
+          <Link href="/" className="navbar-brand justify-center">
+            <span className="brand-mark" style={{ width: 36, height: 36, fontSize: 18 }}>&gt;_</span>
+            <span className="text-xl font-semibold">Sify Gist</span>
           </Link>
         </div>
 
         {/* 登录卡片 */}
         <div className="card">
           <div className="card-header">
-            <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>登录</h1>
+            <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>登录</h1>
           </div>
           
           <div className="card-body">
@@ -130,12 +125,7 @@ export default function LoginPageClient() {
             {/* GitHub 登录按钮 */}
             <a
               href="/api/auth/github"
-              className="btn w-full py-2.5 mb-4 flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-main)',
-              }}
+              className="btn w-full py-2.5 mb-4"
             >
               <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
                 <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.07 1.87 3.75 3.65 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
@@ -188,7 +178,7 @@ export default function LoginPageClient() {
           <div className="card-footer text-center">
             <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               新用户？{' '}
-              <Link href="/register" style={{ color: 'var(--color-text-link)' }}>
+              <Link href="/register" style={{ color: 'var(--color-accent)' }}>
                 创建账户
               </Link>
             </span>

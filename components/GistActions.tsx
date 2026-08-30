@@ -246,7 +246,7 @@ export default function GistActions({gistId, gistUserId, nbLikes = 0, nbForks = 
           onClick={handleStarToggle}
           disabled={loading}
           className="btn btn-sm flex items-center gap-1 transition-all duration-200"
-          style={isStarred ? {borderColor: 'var(--color-primary)', color: 'var(--color-primary)'} : {}}
+          style={isStarred ? {borderColor: 'var(--color-accent)', color: 'var(--color-accent)'} : {}}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={isStarred ? 'currentColor' : 'none'}
                viewBox="0 0 24 24" stroke="currentColor">
@@ -260,7 +260,7 @@ export default function GistActions({gistId, gistUserId, nbLikes = 0, nbForks = 
           onClick={handleFork}
           disabled={loading || forking || gistUserId === currentUserId}
           className="btn btn-sm flex items-center gap-1 transition-all duration-200"
-          style={hasForked ? {borderColor: 'var(--color-primary)', color: 'var(--color-primary)'} : {}}
+          style={hasForked ? {borderColor: 'var(--color-accent)', color: 'var(--color-accent)'} : {}}
           title={gistUserId === currentUserId ? '不能 fork 自己的 Gist' : hasForked ? '查看已 fork 的版本' : 'Fork 这个 Gist'}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24"

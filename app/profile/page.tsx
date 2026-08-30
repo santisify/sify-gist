@@ -4,20 +4,14 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Gist, Visibility } from '@/lib/gists';
+import { Gist, Visibility, PaginatedResult } from '@/lib/gists';
+import { getTimeAgo } from '@/lib/format';
+import VisibilityBadge from '@/lib/visibility-badge';
 import AvatarUpload from '@/components/AvatarUpload';
 import Pagination from '@/components/Pagination';
 
-interface PaginatedResult {
-  data: Gist[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 function ProfileContent() {
-  const [userGists, setUserGists] = useState<PaginatedResult | null>(null);
+  const [userGists, setUserGists] = useState<PaginatedResult<Gist> | null>(null);
   const [starredGists, setStarredGists] = useState<Gist[]>([]);
   const [activeTab, setActiveTab] = useState<'created' | 'starred'>('created');
   const [isLoading, setIsLoading] = useState(true);
@@ -195,31 +189,12 @@ function ProfileContent() {
     router.push(`/profile?page=${newPage}`);
   };
 
-  function getVisibilityBadge(visibility: Visibility) {
-    switch (visibility) {
-      case 2: // private
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
-            私有
-          </span>
-        );
-      case 1: // unlisted
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>
-            未列出
-          </span>
-        );
-      default:
-        return null;
-    }
-  }
-
   return (
     <ProtectedRoute>
       <div className="container-main py-8">
         {/* 用户信息卡片 */}
         <div className="card mb-8 overflow-hidden">
-          <div className="p-8" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)' }}>
+          <div className="p-8" style={{ background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)' }}>
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full opacity-20 blur-xl" style={{ backgroundColor: 'white' }}></div>
@@ -254,22 +229,22 @@ function ProfileContent() {
           
           {/* 统计信息 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px" style={{ backgroundColor: 'var(--color-border)' }}>
-            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
-              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>{userGists?.total || 0}</div>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>{userGists?.total || 0}</div>
               <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>创建的 Gist</div>
             </div>
-            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
-              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>{starredGists.length}</div>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>{starredGists.length}</div>
               <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>收藏的 Gist</div>
             </div>
-            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
-              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
                 {userGists?.data?.reduce((sum, g) => sum + g.files.length, 0) || 0}
               </div>
               <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>文件总数</div>
             </div>
-            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg-main)' }}>
-              <div className="text-2xl font-bold" style={{ color: 'var(--color-text-main)' }}>
+            <div className="p-4 text-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+              <div className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
                 {userGists?.data?.reduce((sum, g) => sum + (g.topics?.length || 0), 0) || 0}
               </div>
               <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>标签总数</div>
@@ -279,14 +254,14 @@ function ProfileContent() {
 
         {/* 标签页 */}
         <div className="card overflow-hidden">
-          <div className="border-b" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-nav)' }}>
+          <div className="border-b" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-subtle)' }}>
             <nav className="flex px-6">
               <button
                 onClick={() => setActiveTab('created')}
                 className="px-6 py-4 text-sm font-medium border-b-2 transition-all relative"
                 style={{ 
-                  borderColor: activeTab === 'created' ? 'var(--color-primary)' : 'transparent',
-                  color: activeTab === 'created' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
+                  borderColor: activeTab === 'created' ? 'var(--color-accent)' : 'transparent',
+                  color: activeTab === 'created' ? 'var(--color-accent)' : 'var(--color-text-secondary)'
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -295,7 +270,7 @@ function ProfileContent() {
                   </svg>
                   我创建的
                   <span className="px-2 py-0.5 rounded-full text-xs" style={{ 
-                    backgroundColor: activeTab === 'created' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+                    backgroundColor: activeTab === 'created' ? 'var(--color-accent)' : 'var(--color-bg-subtle)',
                     color: activeTab === 'created' ? 'white' : 'var(--color-text-muted)'
                   }}>
                     {userGists?.total || 0}
@@ -306,8 +281,8 @@ function ProfileContent() {
                 onClick={() => setActiveTab('starred')}
                 className="px-6 py-4 text-sm font-medium border-b-2 transition-all"
                 style={{ 
-                  borderColor: activeTab === 'starred' ? 'var(--color-primary)' : 'transparent',
-                  color: activeTab === 'starred' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
+                  borderColor: activeTab === 'starred' ? 'var(--color-accent)' : 'transparent',
+                  color: activeTab === 'starred' ? 'var(--color-accent)' : 'var(--color-text-secondary)'
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -316,7 +291,7 @@ function ProfileContent() {
                   </svg>
                   我收藏的
                   <span className="px-2 py-0.5 rounded-full text-xs" style={{ 
-                    backgroundColor: activeTab === 'starred' ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+                    backgroundColor: activeTab === 'starred' ? 'var(--color-accent)' : 'var(--color-bg-subtle)',
                     color: activeTab === 'starred' ? 'white' : 'var(--color-text-muted)'
                   }}>
                     {starredGists.length}
@@ -326,10 +301,10 @@ function ProfileContent() {
             </nav>
           </div>
 
-          <div className="p-6" style={{ backgroundColor: 'var(--color-bg-main)' }}>
+          <div className="p-6" style={{ backgroundColor: 'var(--color-bg)' }}>
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-accent)' }}></div>
                 <p className="mt-2" style={{ color: 'var(--color-text-secondary)' }}>加载中...</p>
               </div>
             ) : activeTab === 'created' ? (
@@ -351,7 +326,7 @@ function ProfileContent() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                           </svg>
                           <span className="gist-item-title">{gist.title || '未命名'}</span>
-                          {getVisibilityBadge(gist.visibility)}
+                          {gist.visibility !== 0 && <VisibilityBadge visibility={gist.visibility as Visibility} />}
                         </div>
                         {gist.description && (
                           <p className="gist-item-desc truncate">
@@ -390,7 +365,7 @@ function ProfileContent() {
                               router.push(`/gists/${gist.id}/edit`);
                             }}
                             className="p-1.5 rounded-md transition-colors hover:bg-opacity-80"
-                            style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                            style={{ backgroundColor: 'var(--color-bg-subtle)' }}
                             title="编辑"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -403,7 +378,7 @@ function ProfileContent() {
                               handleDeleteGist(gist.id);
                             }}
                             className="p-1.5 rounded-md transition-colors hover:bg-red-50"
-                            style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                            style={{ backgroundColor: 'var(--color-bg-subtle)' }}
                             title="删除"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -464,7 +439,7 @@ function ProfileContent() {
                             {gist.user.avatar_url ? (
                               <img src={gist.user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
                             ) : (
-                              <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                              <div className="w-4 h-4 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--color-accent)', color: 'white' }}>
                                 {gist.user.name?.charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -528,17 +503,17 @@ function ProfileContent() {
             <div className="card relative w-full max-w-md p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(74, 124, 247, 0.1)' }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" style={{ color: 'var(--color-primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-main)' }}>修改密码</h3>
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>修改密码</h3>
                 </div>
                 <button 
                   onClick={closePasswordModal} 
                   className="p-1.5 rounded-lg transition-colors hover:bg-opacity-80"
-                  style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                  style={{ backgroundColor: 'var(--color-bg-subtle)' }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -548,7 +523,7 @@ function ProfileContent() {
               
               <form onSubmit={handlePasswordChange}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                     当前密码
                   </label>
                   <input
@@ -558,14 +533,14 @@ function ProfileContent() {
                     required
                     className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
                     style={{ 
-                      backgroundColor: 'var(--color-bg-main)',
+                      backgroundColor: 'var(--color-bg)',
                       borderColor: 'var(--color-border)'
                     }}
                     placeholder="输入当前密码"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                     新密码
                   </label>
                   <input
@@ -576,14 +551,14 @@ function ProfileContent() {
                     minLength={6}
                     className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
                     style={{ 
-                      backgroundColor: 'var(--color-bg-main)',
+                      backgroundColor: 'var(--color-bg)',
                       borderColor: 'var(--color-border)'
                     }}
                     placeholder="输入新密码（至少6位）"
                   />
                 </div>
                 <div className="mb-5">
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                     确认新密码
                   </label>
                   <input
@@ -593,14 +568,14 @@ function ProfileContent() {
                     required
                     className="w-full px-4 py-2.5 text-sm rounded-lg border-2 transition-colors"
                     style={{ 
-                      backgroundColor: 'var(--color-bg-main)',
+                      backgroundColor: 'var(--color-bg)',
                       borderColor: 'var(--color-border)'
                     }}
                     placeholder="再次输入新密码"
                   />
                 </div>
                 {passwordError && (
-                  <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                  <div className="alert alert-danger mb-4 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -608,7 +583,7 @@ function ProfileContent() {
                   </div>
                 )}
                 {passwordSuccess && (
-                  <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: '#D1FAE5', color: '#059669' }}>
+                  <div className="alert alert-success mb-4 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -621,8 +596,8 @@ function ProfileContent() {
                     onClick={closePasswordModal}
                     className="px-5 py-2 rounded-lg text-sm font-medium transition-colors"
                     style={{ 
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-main)'
+                      backgroundColor: 'var(--color-bg-subtle)',
+                      color: 'var(--color-text)'
                     }}
                   >
                     取消

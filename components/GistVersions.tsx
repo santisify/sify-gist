@@ -55,7 +55,7 @@ export default function GistVersions({ gistId }: GistVersionsProps) {
               <div className="flex justify-between items-center">
                 <Link 
                   href={`/gists/${gistId}/versions/${version.version_number}`}
-                  className="text-blue-600 hover:underline font-mono dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-accent hover:underline font-mono"
                 >
                   版本 #{version.version_number}
                 </Link>

@@ -14,7 +14,7 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   loading: () => (
     <div className="w-full h-96 border rounded-md flex items-center justify-center" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-code)' }}>
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mb-3" style={{ borderColor: 'var(--color-primary)' }}></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mb-3" style={{ borderColor: 'var(--color-accent)' }}></div>
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>加载代码编辑器...</p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>首次加载可能需要几秒钟</p>
       </div>
@@ -306,11 +306,11 @@ export default function EditGistPageClient() {
         <div className="gist-card">
           {/* 头部 */}
           <div className="p-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
-            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-main)' }}>编辑 Gist</h1>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text)' }}>编辑 Gist</h1>
           </div>
           
           {error && (
-            <div className="mx-4 mt-4 p-3 rounded-md text-sm" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+            <div className="alert alert-danger mx-4 mt-4">
               {error}
             </div>
           )}
@@ -318,7 +318,7 @@ export default function EditGistPageClient() {
           <form onSubmit={handleSubmit} className="p-4">
             {/* 标题 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
                 标题 *
               </label>
               <input
@@ -333,7 +333,7 @@ export default function EditGistPageClient() {
 
             {/* 描述 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-main)' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
                 描述 (可选)
               </label>
               <textarea
@@ -347,7 +347,7 @@ export default function EditGistPageClient() {
 
             {/* 可见性选择 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-main)' }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                 可见性
               </label>
               <div className="flex gap-3">
@@ -361,7 +361,7 @@ export default function EditGistPageClient() {
                     className="w-4 h-4"
                   />
                   <div>
-                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text)' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -383,7 +383,7 @@ export default function EditGistPageClient() {
                     className="w-4 h-4"
                   />
                   <div>
-                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text)' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                       </svg>
@@ -405,7 +405,7 @@ export default function EditGistPageClient() {
                     className="w-4 h-4"
                   />
                   <div>
-                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                    <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--color-text)' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
@@ -422,7 +422,7 @@ export default function EditGistPageClient() {
             {/* 文件标签页 */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+                <label className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
                   文件
                 </label>
                 <button
@@ -446,8 +446,8 @@ export default function EditGistPageClient() {
                       activeFileIndex === index ? 'active-tab' : ''
                     }`}
                     style={{
-                      color: activeFileIndex === index ? 'var(--color-text-main)' : 'var(--color-text-secondary)',
-                      borderColor: activeFileIndex === index ? 'var(--color-primary)' : 'transparent'
+                      color: activeFileIndex === index ? 'var(--color-text)' : 'var(--color-text-secondary)',
+                      borderColor: activeFileIndex === index ? 'var(--color-accent)' : 'transparent'
                     }}
                     onClick={() => setActiveFileIndex(index)}
                   >

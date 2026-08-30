@@ -292,3 +292,59 @@ export const getMonacoLanguage = (value: string) => {
 export const getPrismLanguage = (value: string) => {
   return getLanguageByValue(value).prism;
 };
+
+/**
+ * Map a language value (lowercase key like "javascript") to the CSS
+ * class used by the `.lang-<key> .lang-badge-dot` rules in globals.css.
+ * Unknown languages get no dot class (the dot defaults to muted).
+ */
+export function getLanguageBadgeClass(value: string): string {
+  const known: Record<string, string> = {
+    javascript: 'lang-javascript',
+    jsx: 'lang-javascript',
+    tsx: 'lang-typescript',
+    typescript: 'lang-typescript',
+    python: 'lang-python',
+    ruby: 'lang-ruby',
+    java: 'lang-java',
+    go: 'lang-go',
+    rust: 'lang-rust',
+    c: 'lang-c',
+    cpp: 'lang-cpp',
+    csharp: 'lang-cpp',
+    php: 'lang-php',
+    html: 'lang-html',
+    css: 'lang-css',
+    scss: 'lang-css',
+    less: 'lang-css',
+    json: 'lang-json',
+    markdown: 'lang-markdown',
+    bash: 'lang-bash',
+    shell: 'lang-shell',
+    sql: 'lang-sql',
+    yaml: 'lang-yaml',
+    dockerfile: 'lang-dockerfile',
+    xml: 'lang-xml',
+    toml: 'lang-toml',
+    diff: 'lang-diff',
+    vue: 'lang-vue',
+    svelte: 'lang-svelte',
+    swift: 'lang-swift',
+    kotlin: 'lang-kotlin',
+    scala: 'lang-scala',
+    perl: 'lang-perl',
+    r: 'lang-r',
+    dart: 'lang-dart',
+    lua: 'lang-lua',
+    graphql: 'lang-graphql',
+    yul: 'lang-yul',
+  };
+  return known[value] || '';
+}
+
+/**
+ * Human-readable label for a language value.
+ */
+export function getLanguageLabel(value: string): string {
+  return getLanguageByValue(value).label;
+}

@@ -72,7 +72,7 @@ export default function Pagination({ currentPage, totalPages, total, onPageChang
           disabled={currentPage <= 1}
           className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ 
-            color: currentPage <= 1 ? 'var(--color-text-muted)' : 'var(--color-text-main)',
+            color: currentPage <= 1 ? 'var(--color-text-muted)' : 'var(--color-text)',
           }}
         >
           上一页
@@ -91,8 +91,8 @@ export default function Pagination({ currentPage, totalPages, total, onPageChang
                     : ''
                 }`}
                 style={{
-                  backgroundColor: page === currentPage ? 'var(--color-primary)' : 'transparent',
-                  color: page === currentPage ? 'white' : 'var(--color-text-main)',
+                  backgroundColor: page === currentPage ? 'var(--color-accent)' : 'transparent',
+                  color: page === currentPage ? 'white' : 'var(--color-text)',
                 }}
               >
                 {page}
@@ -111,7 +111,7 @@ export default function Pagination({ currentPage, totalPages, total, onPageChang
           disabled={currentPage >= totalPages}
           className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ 
-            color: currentPage >= totalPages ? 'var(--color-text-muted)' : 'var(--color-text-main)',
+            color: currentPage >= totalPages ? 'var(--color-text-muted)' : 'var(--color-text)',
           }}
         >
           下一页

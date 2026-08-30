@@ -25,6 +25,7 @@
 ### Gist 管理
 - ✅ 完整的 CRUD 操作
 - ✅ 版本控制和历史记录查看
+- ✅ 版本对比与恢复
 - ✅ Gist 编辑功能
 - ✅ Gist 导出功能（ZIP 格式）
 - ✅ Gist 收藏功能
@@ -56,18 +57,24 @@
 - ✅ API 接口
 - ✅ 丰富的首页展示（统计信息、功能介绍）
 - ✅ 分页组件
-- ✅ **安全性增强** - 统一的文件名、主题和描述转义逻辑
+- ✅ 统一的文件名、主题和描述转义逻辑
+- ✅ 访问令牌（Access Token）与 SSH 公钥管理，便于 API 调用
 
 ## 技术栈
 
 - [Next.js 14](https://nextjs.org/) - React 框架（App Router）
 - [TypeScript](https://www.typescriptlang.org/) - 类型安全
-- [Tailwind CSS](https://tailwindcss.com/) - 样式设计
+- [Tailwind CSS](https://tailwindcss.com/) - 样式设计（基于 CSS 变量的设计 token 系统）
+- [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) + [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) - 字体（正文 / 代码与数据）
 - [Vercel](https://vercel.com/) - 部署平台
 - [Prism.js](https://prismjs.com/) - 语法高亮
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) - 代码编辑器
 - [Supabase](https://supabase.com/) - 数据库
 - [JSZip](https://stuk.github.io/jszip/) - ZIP 文件处理
+
+### 设计语言
+
+Sify Gist 采用开发者向的视觉语言：以 ink/slate 深色为底，搭配单一终端绿（terminal green）作为强调色——“代码运行起来”的隐喻。字体上以 JetBrains Mono 承载代码、文件名、标签与元数据，IBM Plex Sans 承载正文；chrome 受终端启发（代码区头部带 `>_` 提示符与绿色运行点）。高对比、可访问、暗色优先。
 
 ## Supabase 数据库配置
 
@@ -280,24 +287,31 @@ vercel --prod
 
 ```
 sify-gist/
-├── app/                 # Next.js 14 App Router 页面
-│   ├── api/            # API 路由
-│   │   ├── auth/       # 认证相关 API
-│   │   ├── gists/      # Gist 相关 API
-│   │   ├── topics/     # 标签 API
-│   │   └── users/      # 用户 API
+├── app/                 # Next.js 14 App Router
+│   ├── api/            # API 路由（auth、gists、topics、users、tokens、ssh-keys）
+│   ├── api-docs/       # API 文档页面
 │   ├── create/         # 创建 Gist 页面
 │   ├── discover/       # 发现页面
-│   ├── gists/          # Gist 详情页面
+│   ├── gists/          # Gist 详情 / 编辑 / 版本对比
 │   ├── login/          # 登录页面
 │   ├── profile/        # 个人中心页面
 │   ├── register/       # 注册页面
 │   ├── search/         # 搜索页面
-│   └── users/          # 用户公开主页
-├── components/         # React 组件
-├── lib/               # 工具函数和数据处理
+│   ├── settings/       # 设置页面（令牌、SSH 公钥）
+│   ├── styles/         # 全局样式与设计 token
+│   ├── users/          # 用户公开主页
+│   ├── layout.tsx      # 根布局（字体、主题脚本）
+│   └── navbar.tsx      # 导航栏
+├── components/         # React 组件（GistCard、CodeBlock、GistDisplay 等）
+├── lib/               # 工具与数据层
+│   ├── gists.ts        # Gist 数据操作
+│   ├── auth.ts        # 认证
+│   ├── format.ts      # 共享显示工具（getTimeAgo 等）
+│   ├── language-support.ts # 语言映射
+│   └── ...
 ├── public/            # 静态资源
-└── styles/            # 全局样式
+├── tailwind.config.js # 设计 token → Tailwind 映射
+└── next.config.js
 ```
 
 ## 致谢

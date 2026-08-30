@@ -18,7 +18,7 @@ export default function ApiDocsPage() {
           <div className="border border-gray-200 rounded-lg p-4 mb-6 dark:border-gray-700 dark:bg-gray-700/50">
             <h3 className="text-lg font-semibold text-gray-700 mb-2 dark:text-gray-200">获取所有 Gists</h3>
             <div className="mb-2">
-              <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-mono dark:bg-blue-900/50 dark:text-blue-300">GET</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold" style={{ background: "var(--color-accent-soft)", color: "var(--color-accent)" }}>GET</span>
               <span className="ml-2 font-mono dark:text-gray-300">/api/gists</span>
             </div>
             <div className="text-gray-600 dark:text-gray-300">
@@ -128,7 +128,7 @@ export default function ApiDocsPage() {
           <div className="border border-gray-200 rounded-lg p-4 mb-6 dark:border-gray-700 dark:bg-gray-700/50">
             <h3 className="text-lg font-semibold text-gray-700 mb-2 dark:text-gray-200">获取 Gist 版本历史</h3>
             <div className="mb-2">
-              <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-mono dark:bg-blue-900/50 dark:text-blue-300">GET</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold" style={{ background: "var(--color-accent-soft)", color: "var(--color-accent)" }}>GET</span>
               <span className="ml-2 font-mono dark:text-gray-300">/api/gists/{`{id}`}/versions</span>
             </div>
             <div className="text-gray-600 dark:text-gray-300">
